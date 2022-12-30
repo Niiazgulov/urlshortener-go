@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	// "fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-var (
-	keymap = make(map[string]string, 100)
-)
+// var (
+// 	keymap = make(map[string]string, 100)
+// )
 
 const (
 	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -50,23 +50,7 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		randint := rand.Uint64()
 		short := Encoder(randint)
 		shorturl := "http://localhost:8080/" + short
-		keymap[short] = longURL
-		jsonData, err := json.Marshal(keymap)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(string(jsonData))
-		jsonFile, err := os.Create("./OurURL.json")
-		if err != nil {
-			panic(err)
-		}
-		defer jsonFile.Close()
-		jsonFile.Write(jsonData)
-		jsonFile.Close()
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(shorturl))
-	case http.MethodGet:
-		short := r.URL.Path
+		//keymap[short] = longURL
 		var data []byte
 		data, _ = ioutil.ReadFile("OurURL.json")
 		var m map[string]string
@@ -74,15 +58,44 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		m[short] = longURL
+		jsonData, err := json.Marshal(m)
+		if err != nil {
+			panic(err)
+		}
+		os.WriteFile("OurURL.json", jsonData, 0777)
+
+		// jsonData, err := json.Marshal(keymap)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// jsonFile, err := os.Create("./OurURL.json")
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// defer jsonFile.Close()
+		// jsonFile.Write(jsonData)
+		// jsonFile.Close()
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(shorturl))
+	case http.MethodGet:
+		short := r.URL.Path
 		shortnew := RemoveChar(short)
+		var data []byte
+		data, _ = ioutil.ReadFile("OurURL.json")
+		var m map[string]string
+		err := json.Unmarshal(data, &m)
+		if err != nil {
+			log.Fatal(err)
+		}
 		originalURL := m[shortnew]
 		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
 		short2 := r.URL.Path
-		originalURL2 := keymap[short2]
+		//originalURL2 := keymap[short2]
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Location", originalURL2)
+		w.Header().Set("Location", short2)
 	}
 }
 
