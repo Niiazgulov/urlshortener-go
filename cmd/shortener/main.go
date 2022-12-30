@@ -73,7 +73,8 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
 		// short := r.FormValue("/")
-		short := r.URL.Path
+		short := r.URL.Query().Get("/")
+		//short := r.URL.Path
 		var data []byte
 		data, _ = ioutil.ReadFile("OurURL.json")
 		var m map[string]string
