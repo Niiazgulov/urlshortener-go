@@ -80,11 +80,10 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		err := json.Unmarshal(data, &m)
 		if err != nil {
 			log.Fatal(err)
-
 		}
-		originalURL := m[short]
+		//originalURL := m[short]
 		w.WriteHeader(http.StatusTemporaryRedirect)
-		w.Header().Set("Location", originalURL)
+		w.Header().Set("Location", short)
 	default:
 		short2 := r.URL.Path
 		originalURL2 := keymap[short2]
