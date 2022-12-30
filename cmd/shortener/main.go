@@ -73,9 +73,9 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
 		// short := r.FormValue("/")
-		short := "tc6lGK8Nbjt"
+		//short := "tc6lGK8Nbjt"
 		//short := r.Header.Get()
-		//short := r.URL.Path
+		short := r.URL.Path
 		var data []byte
 		data, _ = ioutil.ReadFile("OurURL.json")
 		var m map[string]string
@@ -83,8 +83,8 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//originalURL := m[short]
-		w.Header().Set("Location", short)
+		originalURL := m[short]
+		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
 		short2 := r.URL.Path
