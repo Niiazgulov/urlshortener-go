@@ -25,44 +25,56 @@ func Encoder(number uint64) string {
 	return encodedBuilder.String()
 }
 
-func PostHandler(w http.ResponseWriter, r *http.Request) {
+func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 	// этот обработчик принимает только запросы, отправленные методом POST
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only GET requests are allowed!", http.StatusBadRequest)
+	if r.Method != http.MethodPost && r.Method != http.MethodGet {
+		http.Error(w, "Only GET or POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
 	//URLid := r.URL.Query().Get("id")
-	originalURL := r.URL.Path
-	if originalURL == "" {
+	longURL := r.URL.Path
+	if longURL == "" {
 		http.Error(w, "This URL is empty", http.StatusBadRequest)
 		return
 	}
-	rand.Seed(time.Now().UnixNano())
-	randint := rand.Uint64()
-	short := Encoder(randint)
-	shorturl := "http://localhost:8080/" + short
-	keymap[shorturl] = originalURL
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(shorturl))
+	switch r.Method {
+	case http.MethodPost:
+		rand.Seed(time.Now().UnixNano())
+		randint := rand.Uint64()
+		short := Encoder(randint)
+		shorturl := "http://localhost:8080/" + short
+		keymap[short] = longURL
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(shorturl))
+	case http.MethodGet:
+		short := r.URL.Path
+		originalURL := keymap[short]
+		w.Header().Set("Location", originalURL)
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message": "Bad Request"}`))
+	}
 }
 
-func GetHandler(w http.ResponseWriter, r *http.Request) {
-	// этот обработчик принимает только запросы, отправленные методом GET
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET requests are allowed!", http.StatusBadRequest)
-		return
-	}
-	//URLid := r.URL.Query().Get("/")
-	URLid := r.URL.Path
-	originalURL := keymap[URLid]
-	w.Header().Set("Location", originalURL)
-	w.WriteHeader(http.StatusTemporaryRedirect)
-}
+// func GetHandler(w http.ResponseWriter, r *http.Request) {
+// 	// этот обработчик принимает только запросы, отправленные методом GET
+// 	if r.Method != http.MethodGet {
+// 		http.Error(w, "Only GET requests are allowed!", http.StatusBadRequest)
+// 		return
+// 	}
+// 	short
+// 	//URLid := r.URL.Query().Get("/")
+// 	URLid := r.URL.Path
+// 	originalURL := keymap[URLid]
+// 	w.Header().Set("Location", originalURL)
+// 	w.WriteHeader(http.StatusTemporaryRedirect)
+// }
 
 func main() {
 	// маршрутизация запросов обработчику
-	http.HandleFunc("/", PostHandler)
-	http.HandleFunc("/{keymap[shorturl]}", GetHandler)
+	http.HandleFunc("/", BestHandlerEver)
+	// http.HandleFunc("/{keymap[shorturl]}", GetHandler)
 	// // запуск сервера с адресом localhost, порт 8080
 	http.ListenAndServe(":8080", nil)
 	// log.Fatal(server.ListenAndServe())
