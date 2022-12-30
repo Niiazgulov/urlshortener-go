@@ -52,7 +52,8 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only GET requests are allowed!", http.StatusBadRequest)
 		return
 	}
-	URLid := r.URL.Query().Get("/")
+	//URLid := r.URL.Query().Get("/")
+	URLid := r.URL.Path
 	originalURL := keymap[URLid]
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
@@ -61,7 +62,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	// маршрутизация запросов обработчику
 	http.HandleFunc("/", PostHandler)
-	http.HandleFunc("/{id}", GetHandler)
+	http.HandleFunc("/{keymap[shorturl]}", GetHandler)
 	// // запуск сервера с адресом localhost, порт 8080
 	http.ListenAndServe(":8080", nil)
 	// log.Fatal(server.ListenAndServe())
