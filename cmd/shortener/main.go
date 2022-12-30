@@ -63,8 +63,10 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		os.WriteFile("OurURL.json", jsonData, 0777)
-
+		erro := os.WriteFile("OurURL.json", jsonData, 0777)
+		if erro != nil {
+			log.Fatal(err)
+		}
 		// jsonData, err := json.Marshal(keymap)
 		// if err != nil {
 		// 	panic(err)
