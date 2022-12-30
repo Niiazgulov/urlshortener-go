@@ -1,19 +1,32 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
 
 var (
 	keymap = make(map[string]string, 100)
+	// newMap = make(map[string]interface{})
+	// newMap = make(map[string]string, 100)
+	// urlgod OurURL
 )
 
 const (
 	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
+
+// type OurURL struct {
+// 	urlshort string `json:"short"`
+// 	urlorigin  string `json:"origin"`
+// }
 
 func Encoder(number uint64) string {
 	length := len(symbols)
@@ -44,35 +57,41 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		short := Encoder(randint)
 		shorturl := "http://localhost:8080/" + short
 		keymap[short] = longURL
+		jsonData, err := json.Marshal(keymap)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(jsonData))
+		jsonFile, err := os.Create("./OurURL.json")
+		if err != nil {
+			panic(err)
+		}
+		defer jsonFile.Close()
+		jsonFile.Write(jsonData)
+		jsonFile.Close()
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
-		short := r.FormValue("/")
-		// short := r.URL.Path
-		originalURL := keymap[short]
-		// w.WriteHeader(http.StatusTemporaryRedirect)
+		// short := r.FormValue("/")
+		short := r.URL.Path
+		var data []byte
+		data, _ = ioutil.ReadFile("OurURL.json")
+		var m map[string]string
+		err := json.Unmarshal(data, &m)
+		if err != nil {
+			log.Fatal(err)
+
+		}
+		originalURL := m[short]
+		w.WriteHeader(http.StatusTemporaryRedirect)
 		w.Header().Set("Location", originalURL)
 	default:
 		short2 := r.URL.Path
 		originalURL2 := keymap[short2]
-		//w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Location", originalURL2)
 	}
 }
-
-// func GetHandler(w http.ResponseWriter, r *http.Request) {
-// 	// этот обработчик принимает только запросы, отправленные методом GET
-// 	if r.Method != http.MethodGet {
-// 		http.Error(w, "Only GET requests are allowed!", http.StatusBadRequest)
-// 		return
-// 	}
-// 	short
-// 	//URLid := r.URL.Query().Get("/")
-// 	URLid := r.URL.Path
-// 	originalURL := keymap[URLid]
-// 	w.Header().Set("Location", originalURL)
-// 	w.WriteHeader(http.StatusTemporaryRedirect)
-// }
 
 func main() {
 	// маршрутизация запросов обработчику
