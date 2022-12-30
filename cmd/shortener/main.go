@@ -83,8 +83,8 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		originalURL := m[short]
-		w.Header().Set("Location", originalURL)
+		//originalURL := m[short]
+		w.Header().Set("Location", short)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
 		short2 := r.URL.Path
