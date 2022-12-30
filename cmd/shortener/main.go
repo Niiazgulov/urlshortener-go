@@ -47,13 +47,15 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
-		short := r.URL.Path
+		short := r.URL.RequestURI()
 		originalURL := keymap[short]
-		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
+		w.Header().Set("Location", originalURL)
 	default:
+		short2 := r.URL.Path
+		originalURL2 := keymap[short2]
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"message": "Bad Request"}`))
+		w.Header().Set("Location", originalURL2)
 	}
 }
 
