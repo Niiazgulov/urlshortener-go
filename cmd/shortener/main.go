@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	"urlshortener-1/handlers/"
+	"urlshortener-1/handlers"
 )
 
 func main() {
