@@ -14,19 +14,11 @@ import (
 
 var (
 	keymap = make(map[string]string, 100)
-	// newMap = make(map[string]interface{})
-	// newMap = make(map[string]string, 100)
-	// urlgod OurURL
 )
 
 const (
 	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
-
-// type OurURL struct {
-// 	urlshort string `json:"short"`
-// 	urlorigin  string `json:"origin"`
-// }
 
 func Encoder(number uint64) string {
 	length := len(symbols)
@@ -38,13 +30,15 @@ func Encoder(number uint64) string {
 	return encodedBuilder.String()
 }
 
+func RemoveChar(word string) string {
+	return word[1:]
+}
+
 func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
-	// этот обработчик принимает только запросы, отправленные методом POST
 	if r.Method != http.MethodPost && r.Method != http.MethodGet {
 		http.Error(w, "Only GET or POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
-	//URLid := r.URL.Query().Get("id")
 	longURL := r.URL.Path
 	if longURL == "" {
 		http.Error(w, "This URL is empty", http.StatusBadRequest)
@@ -72,9 +66,6 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
-		// short := r.FormValue("/")
-		//short := "tc6lGK8Nbjt"
-		//short := r.Header.Get()
 		short := r.URL.Path
 		var data []byte
 		data, _ = ioutil.ReadFile("OurURL.json")
@@ -83,8 +74,9 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//originalURL := m[short]
-		w.Header().Set("Location", short)
+		shortnew := RemoveChar(short)
+		originalURL := m[shortnew]
+		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
 		short2 := r.URL.Path
@@ -95,10 +87,6 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// маршрутизация запросов обработчику
 	http.HandleFunc("/", BestHandlerEver)
-	// http.HandleFunc("/{keymap[shorturl]}", GetHandler)
-	// // запуск сервера с адресом localhost, порт 8080
 	http.ListenAndServe(":8080", nil)
-	// log.Fatal(server.ListenAndServe())
 }
