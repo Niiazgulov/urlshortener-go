@@ -66,14 +66,15 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		file, err := os.OpenFile("OurURL.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+		file, err := os.OpenFile("./OurURL.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
 		if err != nil {
 			log.Fatalf("error while opening the file. %v", err)
 		}
+		file.Write(jsonData)
 		defer file.Close()
-		if _, err := file.Write([]byte(jsonData)); err != nil {
-			log.Fatalf("error while writing the file. %v", err)
-		}
+		// if _, err := file.Write([]byte(jsonData)); err != nil {
+		// 	log.Fatalf("error while writing the file. %v", err)
+		// }
 
 		// erro := ioutil.WriteFile("OurURL.json", jsonData, 0777)
 		// if erro != nil {
