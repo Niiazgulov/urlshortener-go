@@ -3,20 +3,14 @@ package main
 import (
 	// "fmt"
 	"encoding/json"
-	"math/rand"
-	"net/http"
-	"strings"
-	"time"
-
-	// "fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
+	"net/http"
 	"os"
+	"strings"
+	"time"
 )
-
-// var (
-// 	keymap = make(map[string]string, 100)
-// )
 
 const (
 	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -65,41 +59,17 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-
 		file, err := os.OpenFile("./OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
 		if err != nil {
 			log.Fatalf("error while opening the file. %v", err)
 		}
 		file.Write(jsonData)
-		defer file.Close()
-		// if _, err := file.Write([]byte(jsonData)); err != nil {
-		// 	log.Fatalf("error while writing the file. %v", err)
-		// }
-
-		// erro := ioutil.WriteFile("OurURL.json", jsonData, 0777)
-		// if erro != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// jsonFile, err := os.Create("./OurURL.json")
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// defer jsonFile.Close()
-		// jsonFile.Write(jsonData)
-		// jsonFile.Close()
+		file.Close()
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
 		short := r.URL.Path
 		shortnew := RemoveChar(short)
-		// var data []byte
-		// data, _ = ioutil.ReadFile("OurURL.json")
-		// var m map[string]string
-		// err := json.Unmarshal(data, &m)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
 		originalURL := mapu[shortnew]
 		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
