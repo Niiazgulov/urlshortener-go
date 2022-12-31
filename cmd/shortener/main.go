@@ -2,20 +2,21 @@ package main
 
 import (
 	// "fmt"
+	"encoding/json"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
-	// "encoding/json"
+
 	// "fmt"
-	// "io/ioutil"
-	// "log"
+	"io/ioutil"
+	"log"
 	// "os"
 )
 
-var (
-	keymap = make(map[string]string, 100)
-)
+// var (
+// 	keymap = make(map[string]string, 100)
+// )
 
 const (
 	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -40,23 +41,34 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only GET or POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
-	longURL := r.URL.Path
-	if longURL == "" {
-		http.Error(w, "This URL is empty", http.StatusBadRequest)
-		return
+	var data []byte
+	data, _ = ioutil.ReadFile("OurURL.json")
+	var mapu map[string]string
+	err := json.Unmarshal(data, &mapu)
+	if err != nil {
+		log.Fatal(err)
 	}
+
 	switch r.Method {
 	case http.MethodPost:
 		rand.Seed(time.Now().UnixNano())
 		randint := rand.Uint64()
 		short := Encoder(randint)
 		shorturl := "http://localhost:8080/" + short
-		keymap[short] = longURL
-
-		// jsonData, err := json.Marshal(keymap)
-		// if err != nil {
-		// 	panic(err)
-		// }
+		longURL := r.URL.Path
+		if longURL == "" {
+			http.Error(w, "This URL is empty", http.StatusBadRequest)
+			return
+		}
+		mapu[short] = longURL
+		jsonData, err := json.Marshal(mapu)
+		if err != nil {
+			panic(err)
+		}
+		erro := ioutil.WriteFile("OurURL.json", jsonData, 0644)
+		if erro != nil {
+			log.Fatal(err)
+		}
 		// jsonFile, err := os.Create("./OurURL.json")
 		// if err != nil {
 		// 	panic(err)
@@ -67,8 +79,8 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
-		//short := r.URL.Path
-		//shortnew := RemoveChar(short)
+		short := r.URL.Path
+		shortnew := RemoveChar(short)
 		// var data []byte
 		// data, _ = ioutil.ReadFile("OurURL.json")
 		// var m map[string]string
@@ -76,8 +88,8 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		// if err != nil {
 		// 	log.Fatal(err)
 		// }
-		//originalURL := keymap[shortnew]
-		w.Header().Set("Location", longURL)
+		originalURL := mapu[shortnew]
+		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
 		short2 := r.URL.Path
