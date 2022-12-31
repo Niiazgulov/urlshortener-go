@@ -42,6 +42,10 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if mapu == nil {
+		w.WriteHeader(http.StatusFailedDependency)
+		w.Write([]byte("Fucking damn"))
+	}
 
 	switch r.Method {
 	case http.MethodPost:
@@ -50,10 +54,10 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		short := Encoder(randint)
 		shorturl := "http://localhost:8080/" + short
 		longURL := r.URL.Path
-		if longURL == "" {
-			http.Error(w, "This URL is empty", http.StatusBadRequest)
-			return
-		}
+		// if longURL == "" {
+		// 	http.Error(w, "This URL is empty", http.StatusBadRequest)
+		// 	return
+		// }
 		mapu[short] = longURL
 		jsonData, err := json.Marshal(mapu)
 		if err != nil {
@@ -61,6 +65,8 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		}
 		file, err := os.OpenFile("./OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
 		if err != nil {
+			w.WriteHeader(http.StatusTooEarly)
+			w.Write([]byte("Fuccck"))
 			log.Fatalf("error while opening the file. %v", err)
 		}
 		file.Write(jsonData)
