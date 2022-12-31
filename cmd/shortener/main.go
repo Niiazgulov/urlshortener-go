@@ -35,6 +35,11 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only GET or POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
+	longURL := r.URL.Path
+	if longURL == "" {
+		http.Error(w, "This URL is empty", http.StatusBadRequest)
+		return
+	}
 	var data []byte
 	var mapu map[string]string
 	data, _ = ioutil.ReadFile("OurURL.json")
@@ -42,31 +47,19 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if mapu == nil {
-		w.WriteHeader(http.StatusFailedDependency)
-		w.Write([]byte("Fucking damn"))
-	}
-
 	switch r.Method {
 	case http.MethodPost:
 		rand.Seed(time.Now().UnixNano())
 		randint := rand.Uint64()
 		short := Encoder(randint)
 		shorturl := "http://localhost:8080/" + short
-		longURL := r.URL.Path
-		// if longURL == "" {
-		// 	http.Error(w, "This URL is empty", http.StatusBadRequest)
-		// 	return
-		// }
 		mapu[short] = longURL
 		jsonData, err := json.Marshal(mapu)
 		if err != nil {
 			panic(err)
 		}
-		file, err := os.OpenFile("./OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+		file, err := os.OpenFile("OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_WRONLY, 0777)
 		if err != nil {
-			w.WriteHeader(http.StatusTooEarly)
-			w.Write([]byte("Fuccck"))
 			log.Fatalf("error while opening the file. %v", err)
 		}
 		file.Write(jsonData)
