@@ -1,20 +1,21 @@
 package main
 
 import (
-	"encoding/json"
 	// "fmt"
-	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"strings"
 	"time"
+	// "encoding/json"
+	// "fmt"
+	// "io/ioutil"
+	// "log"
+	// "os"
 )
 
-// var (
-// 	keymap = make(map[string]string, 100)
-// )
+var (
+	keymap = make(map[string]string, 100)
+)
 
 const (
 	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -50,23 +51,8 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		randint := rand.Uint64()
 		short := Encoder(randint)
 		shorturl := "http://localhost:8080/" + short
-		//keymap[short] = longURL
-		var data []byte
-		data, _ = ioutil.ReadFile("OurURL.json")
-		var m map[string]string
-		err := json.Unmarshal(data, &m)
-		if err != nil {
-			log.Fatal(err)
-		}
-		m[short] = longURL
-		jsonData, err := json.Marshal(m)
-		if err != nil {
-			panic(err)
-		}
-		erro := os.WriteFile("OurURL.json", jsonData, 0777)
-		if erro != nil {
-			log.Fatal(err)
-		}
+		keymap[short] = longURL
+
 		// jsonData, err := json.Marshal(keymap)
 		// if err != nil {
 		// 	panic(err)
@@ -83,14 +69,14 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		short := r.URL.Path
 		shortnew := RemoveChar(short)
-		var data []byte
-		data, _ = ioutil.ReadFile("OurURL.json")
-		var m map[string]string
-		err := json.Unmarshal(data, &m)
-		if err != nil {
-			log.Fatal(err)
-		}
-		originalURL := m[shortnew]
+		// var data []byte
+		// data, _ = ioutil.ReadFile("OurURL.json")
+		// var m map[string]string
+		// err := json.Unmarshal(data, &m)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		originalURL := keymap[shortnew]
 		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
