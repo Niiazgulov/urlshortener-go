@@ -42,8 +42,8 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var data []byte
-	data, _ = ioutil.ReadFile("OurURL.json")
 	var mapu map[string]string
+	data, _ = ioutil.ReadFile("OurURL.json")
 	err := json.Unmarshal(data, &mapu)
 	if err != nil {
 		log.Fatal(err)
@@ -66,7 +66,7 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		file, err := os.OpenFile("./OurURL.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+		file, err := os.OpenFile("./OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
 		if err != nil {
 			log.Fatalf("error while opening the file. %v", err)
 		}
