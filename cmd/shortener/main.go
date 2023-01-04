@@ -2,12 +2,15 @@ package main
 
 import (
 	// "fmt"
-	"encoding/json"
-	"io/ioutil"
-	"log"
+	// "database/sql"
+	//_ "github.com/lib/pq"
+	// "encoding/json"
+	// "io/ioutil"
+	// "log"
 	"math/rand"
 	"net/http"
-	"os"
+
+	// "os"
 	"strings"
 	"time"
 )
@@ -26,6 +29,10 @@ func Encoder(number uint64) string {
 	return encodedBuilder.String()
 }
 
+var (
+	keymap = make(map[string]string, 100)
+)
+
 func RemoveChar(word string) string {
 	return word[1:]
 }
@@ -40,36 +47,36 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "This URL is empty", http.StatusBadRequest)
 		return
 	}
-	var data []byte
-	var mapu map[string]string
-	data, _ = ioutil.ReadFile("OurURL.json")
-	err := json.Unmarshal(data, &mapu)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// var data []byte
+	// var mapu map[string]string
+	// data, _ = ioutil.ReadFile("OurURL.json")
+	// err := json.Unmarshal(data, &mapu)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 	switch r.Method {
 	case http.MethodPost:
 		rand.Seed(time.Now().UnixNano())
 		randint := rand.Uint64()
 		short := Encoder(randint)
 		shorturl := "http://localhost:8080/" + short
-		mapu[short] = longURL
-		jsonData, err := json.Marshal(mapu)
-		if err != nil {
-			panic(err)
-		}
-		file, err := os.OpenFile("OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_WRONLY, 0777)
-		if err != nil {
-			log.Fatalf("error while opening the file. %v", err)
-		}
-		file.Write(jsonData)
-		file.Close()
+		keymap[short] = longURL
+		// jsonData, err := json.Marshal(mapu)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// file, err := os.OpenFile("OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_WRONLY, 0777)
+		// if err != nil {
+		// 	log.Fatalf("error while opening the file. %v", err)
+		// }
+		// file.Write(jsonData)
+		// file.Close()
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
 		short := r.URL.Path
 		shortnew := RemoveChar(short)
-		originalURL := mapu[shortnew]
+		originalURL := keymap[shortnew]
 		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
@@ -81,6 +88,16 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// connStr := "user=postgres dbname=urldb password=secure-password host=localhost sslmode=disable"
+	// db, err := sql.Open("postgres", connStr)
+	// if err != nil {
+	//   panic(err)
+	// }
+	// defer db.Close()
+	// err = db.Ping()
+	// if err != nil {
+	// 	panic(err)
+	// }
 	http.HandleFunc("/", BestHandlerEver)
 	http.ListenAndServe(":8080", nil)
 }
