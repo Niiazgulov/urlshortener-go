@@ -5,12 +5,12 @@ import (
 	// "database/sql"
 	//_ "github.com/lib/pq"
 	// "encoding/json"
-	// "io/ioutil"
-	// "log"
+	// "os"
+	"io"
+	"log"
 	"math/rand"
 	"net/http"
-
-	// "os"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -18,6 +18,8 @@ import (
 const (
 	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
+
+var keymap = map[string]string{}
 
 func Encoder(number uint64) string {
 	length := len(symbols)
@@ -29,10 +31,6 @@ func Encoder(number uint64) string {
 	return encodedBuilder.String()
 }
 
-var (
-	keymap = make(map[string]string, 100)
-)
-
 func RemoveChar(word string) string {
 	return word[1:]
 }
@@ -42,11 +40,12 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only GET or POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
-	longURL := r.URL.Path
-	if longURL == "" {
-		http.Error(w, "This URL is empty", http.StatusBadRequest)
-		return
-	}
+	// longURL := r.URL.Path
+	// if longURL == "" {
+	// 	http.Error(w, "This URL is empty", http.StatusBadRequest)
+	// 	return
+	// }
+
 	// var data []byte
 	// var mapu map[string]string
 	// data, _ = ioutil.ReadFile("OurURL.json")
@@ -60,6 +59,12 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		randint := rand.Uint64()
 		short := Encoder(randint)
 		shorturl := "http://localhost:8080/" + short
+		longURLByte, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		longURL := strings.ReplaceAll(string(longURLByte), "url=", "")
+		longURL, _ = url.QueryUnescape(longURL)
 		keymap[short] = longURL
 		// jsonData, err := json.Marshal(mapu)
 		// if err != nil {
