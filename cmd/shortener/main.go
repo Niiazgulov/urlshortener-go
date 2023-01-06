@@ -1,11 +1,6 @@
 package main
 
 import (
-	// "fmt"
-	// "database/sql"
-	//_ "github.com/lib/pq"
-	// "encoding/json"
-	// "os"
 	"io"
 	"log"
 	"math/rand"
@@ -40,19 +35,6 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only GET or POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
-	// longURL := r.URL.Path
-	// if longURL == "" {
-	// 	http.Error(w, "This URL is empty", http.StatusBadRequest)
-	// 	return
-	// }
-
-	// var data []byte
-	// var mapu map[string]string
-	// data, _ = ioutil.ReadFile("OurURL.json")
-	// err := json.Unmarshal(data, &mapu)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 	switch r.Method {
 	case http.MethodPost:
 		rand.Seed(time.Now().UnixNano())
@@ -66,16 +48,6 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		longURL := strings.ReplaceAll(string(longURLByte), "url=", "")
 		longURL, _ = url.QueryUnescape(longURL)
 		keymap[short] = longURL
-		// jsonData, err := json.Marshal(mapu)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// file, err := os.OpenFile("OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_WRONLY, 0777)
-		// if err != nil {
-		// 	log.Fatalf("error while opening the file. %v", err)
-		// }
-		// file.Write(jsonData)
-		// file.Close()
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl))
 	case http.MethodGet:
@@ -86,23 +58,12 @@ func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
 		short2 := r.URL.Path
-		//originalURL2 := keymap[short2]
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Location", short2)
 	}
 }
 
 func main() {
-	// connStr := "user=postgres dbname=urldb password=secure-password host=localhost sslmode=disable"
-	// db, err := sql.Open("postgres", connStr)
-	// if err != nil {
-	//   panic(err)
-	// }
-	// defer db.Close()
-	// err = db.Ping()
-	// if err != nil {
-	// 	panic(err)
-	// }
 	http.HandleFunc("/", BestHandlerEver)
 	http.ListenAndServe(":8080", nil)
 }
