@@ -8,6 +8,9 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const (
@@ -26,44 +29,71 @@ func Encoder(number uint64) string {
 	return encodedBuilder.String()
 }
 
-func RemoveChar(word string) string {
-	return word[1:]
-}
+// func RemoveChar(word string) string {
+// 	return word[1:]
+// }
 
-func BestHandlerEver(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost && r.Method != http.MethodGet {
-		http.Error(w, "Only GET or POST requests are allowed!", http.StatusBadRequest)
-		return
-	}
-	switch r.Method {
-	case http.MethodPost:
-		rand.Seed(time.Now().UnixNano())
-		randint := rand.Uint64()
-		short := Encoder(randint)
-		shorturl := "http://localhost:8080/" + short
-		longURLByte, err := io.ReadAll(r.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		longURL := strings.ReplaceAll(string(longURLByte), "url=", "")
-		longURL, _ = url.QueryUnescape(longURL)
-		keymap[short] = longURL
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(shorturl))
-	case http.MethodGet:
-		short := r.URL.Path
-		shortnew := RemoveChar(short)
-		originalURL := keymap[shortnew]
-		w.Header().Set("Location", originalURL)
-		w.WriteHeader(http.StatusTemporaryRedirect)
-	default:
-		short2 := r.URL.Path
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Location", short2)
-	}
+func NewRouter() chi.Router {
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Route("/", func(r chi.Router) {
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			rand.Seed(time.Now().UnixNano())
+			randint := rand.Uint64()
+			short := Encoder(randint)
+			shorturl := "http://localhost:8080/" + short
+			longURLByte, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			longURL := strings.ReplaceAll(string(longURLByte), "url=", "")
+			longURL, _ = url.QueryUnescape(longURL)
+			keymap[short] = longURL
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(shorturl))
+		})
+		r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
+			shortnew := chi.URLParam(r, "id")
+			originalURL := keymap[shortnew]
+			w.Header().Set("Location", originalURL)
+			w.WriteHeader(http.StatusTemporaryRedirect)
+		})
+	})
+
+	return r
 }
 
 func main() {
-	http.HandleFunc("/", BestHandlerEver)
-	http.ListenAndServe(":8080", nil)
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Route("/", func(r chi.Router) {
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			rand.Seed(time.Now().UnixNano())
+			randint := rand.Uint64()
+			short := Encoder(randint)
+			shorturl := "http://localhost:8080/" + short
+			longURLByte, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			longURL := strings.ReplaceAll(string(longURLByte), "url=", "")
+			longURL, _ = url.QueryUnescape(longURL)
+			keymap[short] = longURL
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(shorturl))
+		})
+		r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
+			shortnew := chi.URLParam(r, "id")
+			originalURL := keymap[shortnew]
+			w.Header().Set("Location", originalURL)
+			w.WriteHeader(http.StatusTemporaryRedirect)
+		})
+	})
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
