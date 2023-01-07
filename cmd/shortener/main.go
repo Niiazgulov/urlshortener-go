@@ -73,7 +73,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
 			rand.Seed(time.Now().UnixNano())
 			randint := rand.Uint64()
 			short := Encoder(randint)
