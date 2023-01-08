@@ -63,6 +63,33 @@ func NewRouter() chi.Router {
 }
 
 func main() {
-	NewRouter()
-	log.Fatal(http.ListenAndServe(":8080", chi.NewRouter()))
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Route("/", func(r chi.Router) {
+		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
+			rand.Seed(time.Now().UnixNano())
+			randint := rand.Uint64()
+			short := Encoder(randint)
+			shorturl := "http://localhost:8080/" + short
+			longURLByte, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			longURL := strings.ReplaceAll(string(longURLByte), "url=", "")
+			longURL, _ = url.QueryUnescape(longURL)
+			keymap[short] = longURL
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(shorturl))
+		})
+		r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
+			shortnew := chi.URLParam(r, "id")
+			originalURL := keymap[shortnew]
+			w.Header().Set("Location", originalURL)
+			w.WriteHeader(http.StatusTemporaryRedirect)
+		})
+	})
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
