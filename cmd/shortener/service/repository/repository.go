@@ -1,23 +1,43 @@
 package repository
 
 import (
-	"math/rand"
-	"time"
+	"errors"
 )
 
 var Keymap = map[string]string{}
+var ErrorNone = errors.New("short url not found in database")
 
-const (
-	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	BaseURL = "http://localhost:8080/"
-)
+type URL struct {
+	ShortURL    string
+	OriginalURL string
+}
 
-func Encoder() string {
-	rand.Seed(time.Now().UnixNano())
-	result := make([]byte, 0, 7)
-	for i := 0; i < 7; i++ {
-		s := symbols[rand.Intn(len(symbols))]
-		result = append(result, s)
+type AddURLer interface {
+	AddURL(shortURL URL) error
+}
+
+func (u *URL) AddURL(shortURL URL) error {
+	Keymap[u.ShortURL] = u.OriginalURL
+	return nil
+}
+
+func MakeAdd(a AddURLer, u URL) {
+	a.AddURL(u)
+}
+
+type GetURLer interface {
+	GetURL(shortURL URL) (string, error)
+}
+
+func (u *URL) GetURL(shortURL URL) (string, error) {
+	ShortNew := Keymap[u.OriginalURL]
+	if _, ok := Keymap[u.OriginalURL]; ok {
+		return "errURL", ErrorNone
 	}
-	return string(result)
+	OriginalURL := Keymap[ShortNew]
+	return OriginalURL, nil
+}
+
+func MakeGet(g GetURLer, u URL) {
+	g.GetURL(u)
 }
