@@ -15,18 +15,16 @@ import (
 
 const (
 	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	baseURL = "http://localhost:8080/"
 )
 
-var keymap = map[string]string{}
-
-func Encoder(number uint64) string {
-	length := len(symbols)
-	var encodedBuilder strings.Builder
-	encodedBuilder.Grow(10)
-	for ; number > 0; number = number / uint64(length) {
-		encodedBuilder.WriteByte(symbols[(number % uint64(length))])
+func Encoder() string {
+	result := make([]byte, 0, 7)
+	for i := 0; i < 7; i++ {
+		s := symbols[rand.Intn(len(symbols))]
+		result = append(result, s)
 	}
-	return encodedBuilder.String()
+	return string(result)
 }
 
 func NewRouter() chi.Router {
@@ -36,33 +34,15 @@ func NewRouter() chi.Router {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Route("/", func(r chi.Router) {
-		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-			rand.Seed(time.Now().UnixNano())
-			randint := rand.Uint64()
-			short := Encoder(randint)
-			shorturl := "http://localhost:8080/" + short
-			longURLByte, err := io.ReadAll(r.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-			longURL := strings.ReplaceAll(string(longURLByte), "url=", "")
-			longURL, _ = url.QueryUnescape(longURL)
-			keymap[short] = longURL
-			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(shorturl))
-		})
-		r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
-			shortnew := chi.URLParam(r, "id")
-			originalURL := keymap[shortnew]
-			w.Header().Set("Location", originalURL)
-			w.WriteHeader(http.StatusTemporaryRedirect)
-		})
+		r.Get("/{id}", GetURLHandler)
+		r.Post("/", PostURLHandler)
 	})
 
 	return r
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -70,16 +50,19 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-			rand.Seed(time.Now().UnixNano())
-			randint := rand.Uint64()
-			short := Encoder(randint)
-			shorturl := "http://localhost:8080/" + short
+			short := Encoder()
+			shorturl := baseURL + short
 			longURLByte, err := io.ReadAll(r.Body)
 			if err != nil {
-				log.Fatal(err)
+				http.Error(w, "can't read Body", http.StatusBadRequest)
+				return
 			}
-			longURL := strings.ReplaceAll(string(longURLByte), "url=", "")
-			longURL, _ = url.QueryUnescape(longURL)
+			longURL := strings.TrimPrefix(string(longURLByte), "url=")
+			longURL, err = url.QueryUnescape(longURL)
+			if err != nil {
+				http.Error(w, "unable to unescape query in input url", http.StatusBadRequest)
+				return
+			}
 			keymap[short] = longURL
 			w.WriteHeader(http.StatusCreated)
 			w.Write([]byte(shorturl))
