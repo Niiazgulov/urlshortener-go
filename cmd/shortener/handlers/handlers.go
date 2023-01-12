@@ -6,23 +6,23 @@ import (
 	"net/url"
 	"strings"
 
-	. "github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
+	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
 	"github.com/go-chi/chi/v5"
 )
 
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
-	originalURL := Keymap[shortnew]
+	originalURL := repository.Keymap[shortnew]
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 func PostURLHandler(w http.ResponseWriter, r *http.Request) {
-	short := Encoder()
-	if _, ok := Keymap[short]; ok {
-		short = Encoder()
+	short := repository.Encoder()
+	if _, ok := repository.Keymap[short]; ok {
+		short = repository.Encoder()
 	}
-	shorturl := BaseURL + short
+	shorturl := repository.BaseURL + short
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -34,7 +34,7 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unable to unescape query in input url", http.StatusBadRequest)
 		return
 	}
-	Keymap[short] = longURL
+	repository.Keymap[short] = longURL
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shorturl))
 }
