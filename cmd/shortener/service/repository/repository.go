@@ -1,11 +1,6 @@
 package repository
 
-import (
-	"errors"
-)
-
 var Keymap = map[string]string{}
-var ErrorNone = errors.New("short url not found in database")
 
 type URL struct {
 	ShortURL    string
@@ -13,12 +8,11 @@ type URL struct {
 }
 
 type AddURLer interface {
-	AddURL(shortURL URL) error
+	AddURL(shortURL URL)
 }
 
-func (u *URL) AddURL(shortURL URL) error {
+func (u *URL) AddURL(shortURL URL) {
 	Keymap[u.ShortURL] = u.OriginalURL
-	return nil
 }
 
 func MakeAdd(a AddURLer, u URL) {
@@ -26,16 +20,13 @@ func MakeAdd(a AddURLer, u URL) {
 }
 
 type GetURLer interface {
-	GetURL(shortURL URL) (string, error)
+	GetURL(shortURL URL) string
 }
 
-func (u *URL) GetURL(shortURL URL) (string, error) {
-	ShortNew := Keymap[u.OriginalURL]
-	if _, ok := Keymap[u.OriginalURL]; ok {
-		return "errURL", ErrorNone
-	}
+func (u *URL) GetURL(shortURL URL) string {
+	ShortNew := u.ShortURL
 	OriginalURL := Keymap[ShortNew]
-	return OriginalURL, nil
+	return OriginalURL
 }
 
 func MakeGet(g GetURLer, u URL) {
