@@ -8,15 +8,19 @@ type URL struct {
 }
 
 type AddURLer interface {
-	AddURL(shortURL URL)
+	AddURL(shortURL URL) map[string]string
 }
 
-func (u *URL) AddURL(shortURL URL) {
-	Keymap[u.ShortURL] = u.OriginalURL
+func (u *URL) AddURL(shortURL URL) map[string]string {
+	key := u.ShortURL
+	val := u.OriginalURL
+	Keymap[key] = val
+	return Keymap
 }
 
-func MakeAdd(a AddURLer, u URL) {
-	a.AddURL(u)
+func MakeAdd(a AddURLer, u URL) map[string]string {
+	result := a.AddURL(u)
+	return result
 }
 
 type GetURLer interface {
@@ -30,5 +34,6 @@ func (u *URL) GetURL(shortURL URL) string {
 }
 
 func MakeGet(g GetURLer, u URL) string {
-	return g.GetURL(u)
+	result := g.GetURL(u)
+	return result
 }
