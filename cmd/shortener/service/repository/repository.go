@@ -25,10 +25,10 @@ type GetURLer interface {
 
 func (u *URL) GetURL(shortURL URL) string {
 	ShortNew := u.ShortURL
-	OriginalURL := Keymap[ShortNew]
-	return OriginalURL
+	OldOriginalURL := Keymap[ShortNew]
+	return OldOriginalURL
 }
 
-func MakeGet(g GetURLer, u URL) {
-	g.GetURL(u)
+func MakeGet(g GetURLer, u URL) string {
+	return g.GetURL(u)
 }

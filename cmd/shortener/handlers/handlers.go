@@ -54,9 +54,9 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
 	//originalURL := repository.Keymap[shortnew]
-	var originalURL string
-	ourPoorURL2 := repository.URL{ShortURL: shortnew, OriginalURL: originalURL}
-	repository.MakeGet(&repository.URL{}, ourPoorURL2)
+	var originalURL2 string
+	ourPoorURL2 := repository.URL{ShortURL: shortnew, OriginalURL: originalURL2}
+	originalURL := repository.MakeGet(&repository.URL{}, ourPoorURL2)
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
