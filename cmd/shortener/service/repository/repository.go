@@ -1,39 +1,51 @@
 package repository
 
-var Keymap = map[string]string{}
+import (
+	"errors"
+)
+
+var (
+	ErrorKeyNotFound     = errors.New("the key is not found")
+	ErrorKeyNotSpecified = errors.New("the key is not specified")
+)
 
 type URL struct {
 	ShortURL    string
 	OriginalURL string
 }
 
-type AddURLer interface {
-	AddURL(shortURL URL) map[string]string
+type MemoryRepository struct {
+	allurls map[string]string
 }
 
-func (u *URL) AddURL(shortURL URL) map[string]string {
-	key := u.ShortURL
-	val := u.OriginalURL
-	Keymap[key] = val
-	return Keymap
+type AddorGetURL interface {
+	AddURL(longandshortURL URL) error
+	GetURL(idshortURL string) (string, error)
 }
 
-func MakeAdd(a AddURLer, u URL) map[string]string {
-	result := a.AddURL(u)
-	return result
+func NewMemoryRepository() AddorGetURL {
+	return &MemoryRepository{
+		allurls: make(map[string]string),
+	}
 }
 
-type GetURLer interface {
-	GetURL(shortURL URL) string
+func (mr *MemoryRepository) AddURL(u URL) error {
+	if mr.allurls == nil {
+		mr.allurls = make(map[string]string)
+	}
+	if u.ShortURL == "" {
+		return ErrorKeyNotSpecified
+	}
+	mr.allurls[u.ShortURL] = u.OriginalURL
+	return nil
 }
 
-func (u *URL) GetURL(shortURL URL) string {
-	ShortNew := u.ShortURL
-	OldOriginalURL := Keymap[ShortNew]
-	return OldOriginalURL
-}
-
-func MakeGet(g GetURLer, u URL) string {
-	result := g.GetURL(u)
-	return result
+func (mr *MemoryRepository) GetURL(key string) (string, error) {
+	if key == "" {
+		return "", ErrorKeyNotSpecified
+	}
+	if value, ok := mr.allurls[key]; ok {
+		return value, nil
+	}
+	return "", ErrorKeyNotFound
 }

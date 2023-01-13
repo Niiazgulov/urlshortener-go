@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"io"
 	"math/rand"
 	"net/http"
@@ -12,15 +13,22 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+var repo repository.AddorGetURL
+
+func init() {
+	repo = repository.NewMemoryRepository()
+}
+
 const (
-	symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	BaseURL = "http://localhost:8080/"
+	symbols        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	BaseURL        = "http://localhost:8080/"
+	ShortURLMaxLen = 7
 )
 
-func Encoder() string {
+func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
-	result := make([]byte, 0, 7)
-	for i := 0; i < 7; i++ {
+	result := make([]byte, 0, ShortURLMaxLen)
+	for i := 0; i < ShortURLMaxLen; i++ {
 		s := symbols[rand.Intn(len(symbols))]
 		result = append(result, s)
 	}
@@ -28,9 +36,9 @@ func Encoder() string {
 }
 
 func PostURLHandler(w http.ResponseWriter, r *http.Request) {
-	short := Encoder()
-	if _, ok := repository.Keymap[short]; ok {
-		short = Encoder()
+	short := generateRandomString()
+	if _, err := repo.GetURL(short); !errors.Is(err, repository.ErrorKeyNotFound) {
+		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
 	longURLByte, err := io.ReadAll(r.Body)
@@ -45,15 +53,22 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ourPoorURL := repository.URL{ShortURL: short, OriginalURL: longURL}
-	newmap := repository.MakeAdd(&repository.URL{}, ourPoorURL)
-	newmap[short] = longURL
+	err = repo.AddURL(ourPoorURL)
+	if err != nil {
+		http.Error(w, "Status internal server error", http.StatusBadRequest)
+		return
+	}
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shorturl))
 }
 
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
-	originalURL := repository.Keymap[shortnew]
+	originalURL, err := repo.GetURL(shortnew)
+	if err != nil {
+		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+		return
+	}
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
