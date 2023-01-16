@@ -107,6 +107,7 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
 	}
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
