@@ -8,7 +8,7 @@ import (
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
 
-	// "github.com/caarlos0/env/v6"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -29,9 +29,9 @@ func NewRouter() chi.Router {
 func main() {
 	//os.Setenv("SERVER_ADDRESS", handlers.BaseURL)
 	// handlers.Cfg.ServerAddress = ":8080"
-	// if err := env.Parse(&handlers.Cfg); err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err := env.Parse(&handlers.Cfg); err != nil {
+		log.Fatal(err)
+	}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
