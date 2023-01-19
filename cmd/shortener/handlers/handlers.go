@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"io"
 
-	//"os"
 	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
-	"github.com/caarlos0/env/v6"
+	// "github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -28,12 +28,12 @@ const (
 	ShortURLMaxLen = 7
 )
 
-type Config struct {
-	ServerAddress   string `env:"SERVER_ADDRESS"`
-	ShortURLAddress string `env:"BASE_URL"`
-}
+// type Config struct {
+// 	ServerAddress   string `env:"SERVER_ADDRESS"`
+// 	ShortURLAddress string `env:"BASE_URL"`
+// }
 
-var cfg Config
+// var cfg Config
 
 func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
@@ -51,6 +51,7 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
+	os.Setenv("BASE_URL", shorturl)
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -105,13 +106,14 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
-	cfg.ServerAddress = BaseURL
-	cfg.ShortURLAddress = shorturl
-	err = env.Parse(&cfg)
-	if err != nil {
-		http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
-		return
-	}
+	//cfg.ServerAddress = BaseURL
+	//cfg.ShortURLAddress = shorturl
+	// err = env.Parse(&cfg)
+	// if err != nil {
+	// 	http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
+	// 	return
+	// }
+	os.Setenv("BASE_URL", shorturl)
 	JSONresponse := JSONKeymap{ShortJSON: shorturl}
 	response, err := json.Marshal(JSONresponse)
 	if err != nil {

@@ -3,8 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
+
 	//"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,6 +26,7 @@ func NewRouter() chi.Router {
 }
 
 func main() {
+	os.Setenv("SERVER_ADDRESS", handlers.BaseURL)
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
