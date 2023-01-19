@@ -29,12 +29,12 @@ const (
 	ShortURLMaxLen = 7
 )
 
-// type Config struct {
-// 	ServerAddress   string `env:"SERVER_ADDRESS"`
-// 	ShortURLAddress string `env:"BASE_URL"`
-// }
+type Config struct {
+	ServerAddress  string `env:"SERVER_ADDRESS"`
+	BaseURLAddress string `env:"BASE_URL"`
+}
 
-// var cfg Config
+var Cfg Config
 
 func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
@@ -52,6 +52,7 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
+	Cfg.BaseURLAddress = shorturl
 	//os.Setenv("BASE_URL", shorturl)
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -71,7 +72,7 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(shorturl))
+	w.Write([]byte(Cfg.BaseURLAddress))
 }
 
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +109,6 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	shorturl := BaseURL + short
 	//cfg.ServerAddress = BaseURL
-	//cfg.ShortURLAddress = shorturl
 	// err = env.Parse(&cfg)
 	// if err != nil {
 	// 	http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
