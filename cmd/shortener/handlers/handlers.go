@@ -3,17 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"io"
-
 	"math/rand"
 	"net/http"
 	"net/url"
-
-	//"os"
 	"strings"
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
-	// "github.com/caarlos0/env/v6"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -28,6 +25,11 @@ const (
 	BaseURL        = "http://localhost:8080/"
 	ShortURLMaxLen = 7
 )
+
+type JSONKeymap struct {
+	ShortJSON string `json:"result,omitempty"`
+	LongJSON  string `json:"url,omitempty"`
+}
 
 type Config struct {
 	ServerAddress  string `env:"SERVER_ADDRESS"`
@@ -53,7 +55,11 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	shorturl := BaseURL + short
 	Cfg.BaseURLAddress = shorturl
-	//os.Setenv("BASE_URL", shorturl)
+	err := env.Parse(&Cfg)
+	if err != nil {
+		http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
+		return
+	}
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -86,11 +92,6 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-type JSONKeymap struct {
-	ShortJSON string `json:"result,omitempty"`
-	LongJSON  string `json:"url,omitempty"`
-}
-
 func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -108,14 +109,13 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
-	//cfg.ServerAddress = BaseURL
-	// err = env.Parse(&cfg)
-	// if err != nil {
-	// 	http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
-	// 	return
-	// }
-	//os.Setenv("BASE_URL", shorturl)
-	JSONresponse := JSONKeymap{ShortJSON: shorturl}
+	Cfg.BaseURLAddress = shorturl
+	err = env.Parse(&Cfg)
+	if err != nil {
+		http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
+		return
+	}
+	JSONresponse := JSONKeymap{ShortJSON: Cfg.BaseURLAddress}
 	response, err := json.Marshal(JSONresponse)
 	if err != nil {
 		http.Error(w, "Can't make a json.Marshal operation", http.StatusBadRequest)
