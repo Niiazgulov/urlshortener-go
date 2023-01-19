@@ -36,7 +36,9 @@ type Config struct {
 	BaseURLAddress string `env:"BASE_URL"`
 }
 
-var Cfg Config
+var (
+	Cfg = Config{ServerAddress: ":8080"}
+)
 
 func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
@@ -54,12 +56,6 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
-	Cfg.BaseURLAddress = shorturl
-	err := env.Parse(&Cfg)
-	if err != nil {
-		http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
-		return
-	}
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -77,16 +73,29 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
 	}
+	//Cfg.BaseURLAddress = shorturl
+	Cfg.BaseURLAddress = longURL
+	err = env.Parse(&Cfg)
+	if err != nil {
+		http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
+		return
+	}
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(Cfg.BaseURLAddress))
+	w.Write([]byte(shorturl))
 }
 
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
-	originalURL, err := repo.GetURL(shortnew)
-	if err != nil {
-		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
-		return
+	var originalURL string
+	if Cfg.BaseURLAddress != "" {
+		originalURL = Cfg.BaseURLAddress
+	} else {
+		var err error
+		originalURL, err = repo.GetURL(shortnew)
+		if err != nil {
+			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+			return
+		}
 	}
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
@@ -109,13 +118,13 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
-	Cfg.BaseURLAddress = shorturl
+	Cfg.BaseURLAddress = longURL
 	err = env.Parse(&Cfg)
 	if err != nil {
 		http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
 		return
 	}
-	JSONresponse := JSONKeymap{ShortJSON: Cfg.BaseURLAddress}
+	JSONresponse := JSONKeymap{ShortJSON: shorturl}
 	response, err := json.Marshal(JSONresponse)
 	if err != nil {
 		http.Error(w, "Can't make a json.Marshal operation", http.StatusBadRequest)
