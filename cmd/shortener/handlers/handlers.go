@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -26,6 +27,13 @@ const (
 	BaseURL        = "http://localhost:8080/"
 	ShortURLMaxLen = 7
 )
+
+type Config struct {
+	ServerAddress   string `env:"SERVER_ADDRESS"`
+	ShortURLAddress string `env:"BASE_URL"`
+}
+
+var cfg Config
 
 func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
@@ -80,11 +88,6 @@ type JSONKeymap struct {
 	LongJSON  string `json:"url,omitempty"`
 }
 
-type Config struct {
-	ServerAddress   string `env:"SERVER_ADDRESS"`
-	ShortURLAddress string `env:"BASE_URL"`
-}
-
 func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -102,6 +105,13 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
+	cfg.ServerAddress = BaseURL
+	cfg.ShortURLAddress = shorturl
+	err = env.Parse(&cfg)
+	if err != nil {
+		http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
+		return
+	}
 	JSONresponse := JSONKeymap{ShortJSON: shorturl}
 	response, err := json.Marshal(JSONresponse)
 	if err != nil {
