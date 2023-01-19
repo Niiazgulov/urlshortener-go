@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -34,5 +35,10 @@ func main() {
 		r.Post("/", handlers.PostURLHandler)
 		r.Post("/api/shorten", handlers.PostJSONHandler)
 	})
+	var cfg handlers.Config
+	err := env.Parse(&cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

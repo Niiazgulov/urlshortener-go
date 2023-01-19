@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+
+	//"os"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -76,6 +78,11 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 type JSONKeymap struct {
 	ShortJSON string `json:"result,omitempty"`
 	LongJSON  string `json:"url,omitempty"`
+}
+
+type Config struct {
+	ServerAddress   string `env:"SERVER_ADDRESS"`
+	ShortURLAddress string `env:"BASE_URL"`
 }
 
 func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
