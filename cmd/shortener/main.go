@@ -3,11 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
+
+	//"os"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
 
-	//"github.com/caarlos0/env/v6"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -25,8 +26,19 @@ func NewRouter() chi.Router {
 	return r
 }
 
+type Config struct {
+	ServerAddress  string `env:"SERVER_ADDRESS"`
+	BaseURLAddress string `env:"BASE_URL"`
+}
+
+//
+
 func main() {
-	os.Setenv("SERVER_ADDRESS", handlers.BaseURL)
+	//os.Setenv("SERVER_ADDRESS", handlers.BaseURL)
+	var cfg Config
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatal(err)
+	}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)

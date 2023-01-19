@@ -7,7 +7,8 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
+
+	//"os"
 	"strings"
 	"time"
 
@@ -51,7 +52,7 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		short = generateRandomString()
 	}
 	shorturl := BaseURL + short
-	os.Setenv("BASE_URL", shorturl)
+	//os.Setenv("BASE_URL", shorturl)
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -113,7 +114,7 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	// 	http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
 	// 	return
 	// }
-	os.Setenv("BASE_URL", shorturl)
+	//os.Setenv("BASE_URL", shorturl)
 	JSONresponse := JSONKeymap{ShortJSON: shorturl}
 	response, err := json.Marshal(JSONresponse)
 	if err != nil {
