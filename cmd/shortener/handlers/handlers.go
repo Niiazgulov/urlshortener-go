@@ -63,8 +63,8 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 	for _, err := repo.GetURL(short); err == nil; _, err = repo.GetURL(short) {
 		short = generateRandomString()
 	}
-	shorturl := Cfg.BaseURLAddress + short
-	// shorturl := BaseURL + short
+	// shorturl := Cfg.BaseURLAddress + short
+	shorturl := BaseURL + short
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -169,8 +169,8 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	for _, err := repo.GetURL(short); err == nil; _, err = repo.GetURL(short) {
 		short = generateRandomString()
 	}
-	shorturl := Cfg.BaseURLAddress + short
-	// shorturl := BaseURL + short
+	// shorturl := Cfg.BaseURLAddress + short
+	shorturl := BaseURL + short
 	// Cfg.BaseURLAddress = longURL
 	//Cfg.BaseURLAddress = shorturl
 	// err = env.Parse(&Cfg)
