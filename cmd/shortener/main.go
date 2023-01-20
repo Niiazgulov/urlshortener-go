@@ -26,13 +26,7 @@ func NewRouter() chi.Router {
 }
 
 func main() {
-	//os.Setenv("SERVER_ADDRESS", handlers.BaseURL)
-	// handlers.Cfg.ServerAddress = ":8080"
-	// if err := env.Parse(&handlers.Cfg); err != nil {
-	// 	log.Fatal(err)
-	// }
-	cfg := handlers.Config{}
-	if err := env.Parse(&cfg); err != nil {
+	if err := env.Parse(&handlers.Cfg); err != nil {
 		log.Fatal(err)
 	}
 	r := chi.NewRouter()
@@ -45,5 +39,5 @@ func main() {
 		r.Post("/", handlers.PostURLHandler)
 		r.Post("/api/shorten", handlers.PostJSONHandler)
 	})
-	log.Fatal(http.ListenAndServe(cfg.ServerAddress, r))
+	log.Fatal(http.ListenAndServe(handlers.Cfg.ServerAddress, r))
 }

@@ -2,9 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-
-	// "log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -13,14 +12,12 @@ import (
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
-	// "github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 )
 
 var (
 	repo repository.AddorGetURL
-	// originalURL string
-	Cfg Config
+	Cfg  Config
 )
 
 func init() {
@@ -33,20 +30,16 @@ const (
 	ShortURLMaxLen = 7
 )
 
-type JSONKeymap struct {
-	ShortJSON string `json:"result,omitempty"`
-	LongJSON  string `json:"url,omitempty"`
-}
-
 type Config struct {
 	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
 	BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 	FilePath       string `env:"FILE_STORAGE_PATH" envDefault:"./OurURL.json"`
 }
 
-// var (
-// 	Cfg = Config{BaseURLAddress: "http://localhost:8080/", ServerAddress: ":8080"}
-// )
+type JSONKeymap struct {
+	ShortJSON string `json:"result,omitempty"`
+	LongJSON  string `json:"url,omitempty"`
+}
 
 func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
@@ -63,8 +56,9 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 	for _, err := repo.GetURL(short); err == nil; _, err = repo.GetURL(short) {
 		short = generateRandomString()
 	}
-	// shorturl := Cfg.BaseURLAddress + short
-	shorturl := BaseURL + short
+	shorturl := Cfg.BaseURLAddress + short
+	// shorturl := BaseURL + short
+	fmt.Println(shorturl)
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -169,8 +163,8 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	for _, err := repo.GetURL(short); err == nil; _, err = repo.GetURL(short) {
 		short = generateRandomString()
 	}
-	// shorturl := Cfg.BaseURLAddress + short
-	shorturl := BaseURL + short
+	shorturl := Cfg.BaseURLAddress + short
+	// shorturl := BaseURL + short
 	// Cfg.BaseURLAddress = longURL
 	//Cfg.BaseURLAddress = shorturl
 	// err = env.Parse(&Cfg)
