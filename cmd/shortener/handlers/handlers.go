@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
-	"github.com/caarlos0/env/v6"
+	// "github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -32,13 +32,13 @@ type JSONKeymap struct {
 }
 
 type Config struct {
-	ServerAddress  string `env:"SERVER_ADDRESS"`
-	BaseURLAddress string `env:"BASE_URL"`
+	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:":8080"`
+	BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 }
 
-var (
-	Cfg = Config{BaseURLAddress: "http://localhost:8080/", ServerAddress: ":8080"}
-)
+// var (
+// 	Cfg = Config{BaseURLAddress: "http://localhost:8080/", ServerAddress: ":8080"}
+// )
 
 func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
@@ -55,7 +55,8 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 	for _, err := repo.GetURL(short); err == nil; _, err = repo.GetURL(short) {
 		short = generateRandomString()
 	}
-	shorturl := Cfg.BaseURLAddress + short
+	// shorturl := Cfg.BaseURLAddress + short
+	shorturl := BaseURL + short
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -75,11 +76,11 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Cfg.BaseURLAddress = shorturl
 	// Cfg.BaseURLAddress = longURL
-	err = env.Parse(&Cfg)
-	if err != nil {
-		http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
-		return
-	}
+	// err = env.Parse(&Cfg)
+	// if err != nil {
+	// 	http.Error(w, "Can't Parse Config (env)", http.StatusBadRequest)
+	// 	return
+	// }
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shorturl))
 }
@@ -122,7 +123,8 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	for _, err := repo.GetURL(short); err == nil; _, err = repo.GetURL(short) {
 		short = generateRandomString()
 	}
-	shorturl := Cfg.BaseURLAddress + short
+	// shorturl := Cfg.BaseURLAddress + short
+	shorturl := BaseURL + short
 	// Cfg.BaseURLAddress = longURL
 	//Cfg.BaseURLAddress = shorturl
 	// err = env.Parse(&Cfg)
