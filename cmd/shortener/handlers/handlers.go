@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -31,7 +30,7 @@ const (
 )
 
 type Config struct {
-	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
+	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 	FilePath       string `env:"FILE_STORAGE_PATH" envDefault:"./OurURL.json"`
 }
@@ -41,9 +40,9 @@ type JSONKeymap struct {
 	LongJSON  string `json:"url,omitempty"`
 }
 
-type response1 struct {
-	Result string `json:"result,omitempty"`
-}
+// type response1 struct {
+// 	Result string `json:"result,omitempty"`
+// }
 
 func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
@@ -56,13 +55,17 @@ func generateRandomString() string {
 }
 
 func PostURLHandler(w http.ResponseWriter, r *http.Request) {
-	short := generateRandomString()
-	for _, err := repo.GetURL(short); err == nil; _, err = repo.GetURL(short) {
-		short = generateRandomString()
+	shortID := generateRandomString()
+	for _, err := repo.GetURL(shortID); err == nil; _, err = repo.GetURL(shortID) {
+		shortID = generateRandomString()
 	}
-	shorturl := Cfg.BaseURLAddress + short
+	shortParse, err := url.Parse(shortID)
+	short := shortParse.String()
+	BaseCfgURL, _ := url.Parse(Cfg.BaseURLAddress)
+	shorturl := BaseCfgURL.JoinPath(short)
+	// shorturl := Cfg.BaseURLAddress + short
 	// shorturl := BaseURL + short
-	fmt.Println(shorturl)
+	// fmt.Println(shorturl)
 	longURLByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -102,7 +105,7 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 	file.Write(jsonData)
 	defer file.Close()
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(shorturl))
+	w.Write([]byte(shorturl.String()))
 }
 
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
