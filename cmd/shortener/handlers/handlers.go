@@ -40,7 +40,7 @@ type JSONKeymap struct {
 }
 
 type Config struct {
-	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
+	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
 	BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 	FilePath       string `env:"FILE_STORAGE_PATH" envDefault:"./OurURL.json"`
 }
@@ -191,6 +191,20 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
 	}
+	file, err := os.OpenFile("./OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		http.Error(w, "error while opening the file", http.StatusBadRequest)
+		return
+	}
+	urlmap := make(map[string]string)
+	urlmap[short] = longURL
+	jsonData, err := json.Marshal(urlmap)
+	if err != nil {
+		http.Error(w, "unable to Marshal urlmap", http.StatusBadRequest)
+		return
+	}
+	file.Write(jsonData)
+	defer file.Close()
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
