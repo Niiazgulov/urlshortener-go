@@ -6,7 +6,8 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
+
+	// "os"
 	"strings"
 	"time"
 
@@ -72,7 +73,7 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// vers 3
 	fileName := configuration.Cfg.FilePath
-	defer os.Remove(fileName)
+	//defer os.Remove(fileName)
 	producer, err := storage.NewProducer(fileName)
 	if err != nil {
 		http.Error(w, "Can't create file", http.StatusBadRequest)
@@ -234,7 +235,7 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	resobj := storage.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
 	// vers 3
 	fileName := configuration.Cfg.FilePath
-	defer os.Remove(fileName)
+	//defer os.Remove(fileName)
 	producer, err := storage.NewProducer(fileName)
 	if err != nil {
 		http.Error(w, "Can't create file", http.StatusBadRequest)
