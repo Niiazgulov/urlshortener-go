@@ -6,7 +6,8 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
+
+	// "os"
 	"strings"
 	"time"
 
@@ -98,35 +99,36 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
-
 	var originalURL string
-	if configuration.Cfg.FilePath != "" {
-		// file, err := os.OpenFile("./OurURL.json", os.O_RDONLY, 0777)
-		// if err != nil {
-		// 	http.Error(w, "Error while opening the file", http.StatusBadRequest)
-		// 	return
-		// }
-		newkeymap := make(map[string]string)
-		fileBytes, _ := os.ReadFile("./OurURL.json")
-		err := json.Unmarshal(fileBytes, &newkeymap)
-		if err != nil {
-			http.Error(w, "Error while opening the file", http.StatusBadRequest)
-			return
-		}
-		originalURL = newkeymap[shortnew]
-	} else {
-		var err error
-		originalURL, err = repo.GetURL(shortnew)
-		if err != nil {
-			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
-			return
-		}
-	}
-	// originalURL, err := repo.GetURL(shortnew)
+	// if configuration.Cfg.FilePath != "" {
+
+	// file, err := os.OpenFile("./OurURL.json", os.O_RDONLY, 0777)
 	// if err != nil {
-	// 	http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+	// 	http.Error(w, "Error while opening the file", http.StatusBadRequest)
 	// 	return
 	// }
+
+	// 	newkeymap := make(map[string]string)
+	// 	fileBytes, _ := os.ReadFile("./OurURL.json")
+	// 	err := json.Unmarshal(fileBytes, &newkeymap)
+	// 	if err != nil {
+	// 		http.Error(w, "Error while opening the file", http.StatusBadRequest)
+	// 		return
+	// 	}
+	// 	originalURL = newkeymap[shortnew]
+	// } else {
+	// 	var err error
+	// 	originalURL, err = repo.GetURL(shortnew)
+	// 	if err != nil {
+	// 		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+	// 		return
+	// 	}
+	// }
+	originalURL, err := repo.GetURL(shortnew)
+	if err != nil {
+		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+		return
+	}
 
 	// var originalURL string
 	// if Cfg.BaseURLAddress != "" {
