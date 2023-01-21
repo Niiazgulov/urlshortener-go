@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-
-	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
+	// "github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
 	//"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 )
 
@@ -19,20 +18,6 @@ type saver struct {
 	encoder *json.Encoder
 }
 
-// func Prakt() {
-
-//         for _, event := range events {
-//         if err := producer.WriteEvent(event); err != nil {
-//             log.Fatal(err)
-//         }
-//         readEvent, err := consumer.ReadEvent()
-//         if err != nil {
-//             log.Fatal(err)
-//         }
-//         fmt.Println(readEvent)
-//     }
-// }
-
 func NewSaver(fileName string) (*saver, error) {
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
@@ -43,12 +28,13 @@ func NewSaver(fileName string) (*saver, error) {
 		encoder: json.NewEncoder(file),
 	}, nil
 }
-func (s *saver) WriteKeymap(keymap *repository.URL) error {
+func (s *saver) WriteKeymap(keymap *JSONKeymap) error {
 	return s.encoder.Encode(&keymap)
 }
-func (s *saver) WriteJSONKeymap(keymap *JSONKeymap) error {
-	return s.encoder.Encode(&keymap)
-}
+
+//	func (s *saver) WriteJSONKeymap(keymap *JSONKeymap) error {
+//		return s.encoder.Encode(&keymap)
+//	}
 func (s *saver) Close() error {
 	return s.file.Close()
 }
@@ -83,8 +69,8 @@ func NewLoader(fileName string) (*loader, error) {
 		decoder: json.NewDecoder(file),
 	}, nil
 }
-func (l *loader) ReadKeymap() (*repository.URL, error) {
-	kmp := &repository.URL{}
+func (l *loader) ReadKeymap() (*JSONKeymap, error) {
+	kmp := &JSONKeymap{}
 	if err := l.decoder.Decode(&kmp); err != nil {
 		return nil, err
 	}

@@ -30,11 +30,6 @@ const (
 	ShortURLMaxLen = 7
 )
 
-type JSONKeymap struct {
-	ShortJSON string `json:"result,omitempty"`
-	LongJSON  string `json:"url,omitempty"`
-}
-
 func generateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
 	result := make([]byte, 0, ShortURLMaxLen)
@@ -84,7 +79,8 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer saver.Close()
-	if err := saver.WriteKeymap(&ourPoorURL); err != nil {
+	resobj := storage.JSONKeymap{ShortJSON: short, LongJSON: longURL}
+	if err := saver.WriteKeymap(&resobj); err != nil {
 		http.Error(w, "Can't save info to the file", http.StatusBadRequest)
 		return
 	}
@@ -109,8 +105,8 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error while ReadKeymap()", http.StatusBadRequest)
 		return
 	}
-	if readEvent.ShortURL == shortnew {
-		originalURL = readEvent.OriginalURL
+	if readEvent.ShortJSON == shortnew {
+		originalURL = readEvent.LongJSON
 	} else {
 		originalURL, err = repo.GetURL(shortnew)
 		if err != nil {
@@ -168,7 +164,7 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
-	var tempStrorage JSONKeymap
+	var tempStrorage storage.JSONKeymap
 	if err := json.NewDecoder(r.Body).Decode(&tempStrorage); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -191,17 +187,17 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	BaseCfgURL, _ := url.Parse(configuration.Cfg.BaseURLAddress)
 	shortURL := BaseCfgURL.JoinPath(shortID.String())
-	resobj := JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
+	resobj := storage.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
 	configuration.Cfg.FilePath = "OurURL.json"
 	fileName := configuration.Cfg.FilePath
 	defer os.Remove(fileName)
 	saver, err := storage.NewSaver(fileName)
 	if err != nil {
-		http.Error(w, "Can't save info to file", http.StatusBadRequest)
+		http.Error(w, "Can't create saver", http.StatusBadRequest)
 		return
 	}
 	defer saver.Close()
-	if err := saver.WriteKeymap(&ourPoorURL); err != nil {
+	if err := saver.WriteKeymap(&resobj); err != nil {
 		http.Error(w, "Can't save info to the file", http.StatusBadRequest)
 		return
 	}
