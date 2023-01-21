@@ -70,20 +70,38 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
 	}
-	configuration.Cfg.FilePath = "OurURL.json"
+	// vers 3
 	fileName := configuration.Cfg.FilePath
 	defer os.Remove(fileName)
-	saver, err := storage.NewSaver(fileName)
+	producer, err := storage.NewProducer(fileName)
 	if err != nil {
 		http.Error(w, "Can't create file", http.StatusBadRequest)
-		return
+		// 	return
 	}
-	defer saver.Close()
-	resobj := storage.JSONKeymap{ShortJSON: short, LongJSON: longURL}
-	if err := saver.WriteKeymap(&resobj); err != nil {
-		http.Error(w, "Can't save info to the file", http.StatusBadRequest)
-		return
+	defer producer.Close()
+	events := []*storage.Event{{ShortJSON: short, LongJSON: longURL}}
+	for _, event := range events {
+		if err := producer.WriteEvent(event); err != nil {
+			http.Error(w, "Can't WriteEvent()", http.StatusBadRequest)
+			return
+		}
 	}
+	// vers 2
+	// configuration.Cfg.FilePath = "OurURL.json"
+	// fileName := configuration.Cfg.FilePath
+	// defer os.Remove(fileName)
+	// saver, err := storage.NewSaver(fileName)
+	// if err != nil {
+	// 	http.Error(w, "Can't create file", http.StatusBadRequest)
+	// 	return
+	// }
+	// defer saver.Close()
+	// resobj := storage.JSONKeymap{ShortJSON: short, LongJSON: longURL}
+	// if err := saver.WriteKeymap(&resobj); err != nil {
+	// 	http.Error(w, "Can't save info to the file", http.StatusBadRequest)
+	// 	return
+	// }
+	// vers 1
 	//storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shorturl.String()))
@@ -91,20 +109,19 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
-	var originalURL string
-	configuration.Cfg.FilePath = "OurURL.json"
 	fileName := configuration.Cfg.FilePath
-	loader, err := storage.NewLoader(fileName)
+	consumer, err := storage.NewConsumer(fileName)
 	if err != nil {
-		http.Error(w, "Can't load info from the file", http.StatusBadRequest)
+		http.Error(w, "Can't create NewConsumer()", http.StatusBadRequest)
 		return
 	}
-	defer loader.Close()
-	readEvent, err := loader.ReadKeymap()
+	defer consumer.Close()
+	readEvent, err := consumer.ReadEvent()
 	if err != nil {
-		http.Error(w, "Error while ReadKeymap()", http.StatusBadRequest)
+		http.Error(w, "Can't ReadEvent()", http.StatusBadRequest)
 		return
 	}
+	var originalURL string
 	if readEvent.ShortJSON == shortnew {
 		originalURL = readEvent.LongJSON
 	} else {
@@ -115,6 +132,32 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// vers Last
+	// var originalURL string
+	// configuration.Cfg.FilePath = "OurURL.json"
+	// fileName := configuration.Cfg.FilePath
+	// loader, err := storage.NewLoader(fileName)
+	// if err != nil {
+	// 	http.Error(w, "Can't load info from the file", http.StatusBadRequest)
+	// 	return
+	// }
+	// defer loader.Close()
+	// readEvent, err := loader.ReadKeymap()
+	// if err != nil {
+	// 	http.Error(w, "Error while ReadKeymap()", http.StatusBadRequest)
+	// 	return
+	// }
+	// if readEvent.ShortJSON == shortnew {
+	// 	originalURL = readEvent.LongJSON
+	// } else {
+	// 	originalURL, err = repo.GetURL(shortnew)
+	// 	if err != nil {
+	// 		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+	// 		return
+	// 	}
+	// }
+
+	// vers X3
 	// var originalURL string
 	// if configuration.Cfg.FilePath != "" {
 
@@ -124,6 +167,7 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
+	// vers X3
 	// 	newkeymap := make(map[string]string)
 	// 	fileBytes, _ := os.ReadFile("./OurURL.json")
 	// 	err := json.Unmarshal(fileBytes, &newkeymap)
@@ -141,13 +185,13 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	// 	}
 	// }
 
-	//то что нужно:
+	//то, что работало:
 	// originalURL, err := repo.GetURL(shortnew)
 	// if err != nil {
 	// 	http.Error(w, "unable to GET Original url", http.StatusBadRequest)
 	// 	return
 	// }
-
+	// vers X3
 	// var originalURL string
 	// if Cfg.BaseURLAddress != "" {
 	// 	originalURL = Cfg.BaseURLAddress
@@ -188,19 +232,37 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	BaseCfgURL, _ := url.Parse(configuration.Cfg.BaseURLAddress)
 	shortURL := BaseCfgURL.JoinPath(shortID.String())
 	resobj := storage.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
-	configuration.Cfg.FilePath = "OurURL.json"
+	// vers 3
 	fileName := configuration.Cfg.FilePath
 	defer os.Remove(fileName)
-	saver, err := storage.NewSaver(fileName)
+	producer, err := storage.NewProducer(fileName)
 	if err != nil {
-		http.Error(w, "Can't create saver", http.StatusBadRequest)
-		return
+		http.Error(w, "Can't create file", http.StatusBadRequest)
+		// 	return
 	}
-	defer saver.Close()
-	if err := saver.WriteKeymap(&resobj); err != nil {
-		http.Error(w, "Can't save info to the file", http.StatusBadRequest)
-		return
+	defer producer.Close()
+	events := []*storage.Event{{ShortJSON: shortURL.String(), LongJSON: longURL}}
+	for _, event := range events {
+		if err := producer.WriteEvent(event); err != nil {
+			http.Error(w, "Can't WriteEvent()", http.StatusBadRequest)
+			return
+		}
 	}
+	// vers 2
+	// configuration.Cfg.FilePath = "OurURL.json"
+	// fileName := configuration.Cfg.FilePath
+	// defer os.Remove(fileName)
+	// saver, err := storage.NewSaver(fileName)
+	// if err != nil {
+	// 	http.Error(w, "Can't create saver", http.StatusBadRequest)
+	// 	return
+	// }
+	// defer saver.Close()
+	// if err := saver.WriteKeymap(&resobj); err != nil {
+	// 	http.Error(w, "Can't save info to the file", http.StatusBadRequest)
+	// 	return
+	// }
+	// vers 1
 	//storage.FileWriteFunc(configuration.Cfg.FilePath, shortID.String(), longURL)
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
