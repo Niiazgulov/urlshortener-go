@@ -62,7 +62,7 @@ func FileReadFunc(fileadress string) (resultshort map[string]string) {
 		return nil
 	}
 	var byteData map[string]string
-	if err := json.Unmarshal(file, byteData); err != nil {
+	if err := json.Unmarshal(file, &byteData); err != nil {
 		return nil
 	}
 	return byteData
