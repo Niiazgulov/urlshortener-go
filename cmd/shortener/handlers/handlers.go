@@ -6,8 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-
-	// "os"
+	"os"
 	"strings"
 	"time"
 
@@ -76,23 +75,20 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
 	}
-	// file, err := os.OpenFile("./OurURL.json", os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
-	// if err != nil {
-	// 	http.Error(w, "error while opening the file", http.StatusBadRequest)
-	// 	return
-	// }
-	// urlmap := make(map[string]string)
-	// urlmap[short] = longURL
-	// jsonData, err := json.Marshal(urlmap)
-	// if err != nil {
-	// 	http.Error(w, "unable to Marshal urlmap", http.StatusBadRequest)
-	// 	return
-	// }
-	// file.Write(jsonData)
-	// defer file.Close()
-	//filename := "events.log"
 	configuration.Cfg.FilePath = "OurURL.json"
-	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
+	fileName := configuration.Cfg.FilePath
+	defer os.Remove(fileName)
+	saver, err := storage.NewSaver(fileName)
+	if err != nil {
+		http.Error(w, "Can't create file", http.StatusBadRequest)
+		return
+	}
+	defer saver.Close()
+	if err := saver.WriteKeymap(&ourPoorURL); err != nil {
+		http.Error(w, "Can't save info to the file", http.StatusBadRequest)
+		return
+	}
+	//storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shorturl.String()))
 }
@@ -100,6 +96,30 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
 	var originalURL string
+	configuration.Cfg.FilePath = "OurURL.json"
+	fileName := configuration.Cfg.FilePath
+	loader, err := storage.NewLoader(fileName)
+	if err != nil {
+		http.Error(w, "Can't load info from the file", http.StatusBadRequest)
+		return
+	}
+	defer loader.Close()
+	readEvent, err := loader.ReadKeymap()
+	if err != nil {
+		http.Error(w, "Error while ReadKeymap()", http.StatusBadRequest)
+		return
+	}
+	if readEvent.ShortURL == shortnew {
+		originalURL = readEvent.OriginalURL
+	} else {
+		originalURL, err = repo.GetURL(shortnew)
+		if err != nil {
+			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// var originalURL string
 	// if configuration.Cfg.FilePath != "" {
 
 	// file, err := os.OpenFile("./OurURL.json", os.O_RDONLY, 0777)
@@ -124,11 +144,13 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	// 		return
 	// 	}
 	// }
-	originalURL, err := repo.GetURL(shortnew)
-	if err != nil {
-		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
-		return
-	}
+
+	//то что нужно:
+	// originalURL, err := repo.GetURL(shortnew)
+	// if err != nil {
+	// 	http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+	// 	return
+	// }
 
 	// var originalURL string
 	// if Cfg.BaseURLAddress != "" {
@@ -169,9 +191,21 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	BaseCfgURL, _ := url.Parse(configuration.Cfg.BaseURLAddress)
 	shortURL := BaseCfgURL.JoinPath(shortID.String())
-	resobj := JSONKeymap{ShortJSON: shortURL.String()}
+	resobj := JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
 	configuration.Cfg.FilePath = "OurURL.json"
-	storage.FileWriteFunc(configuration.Cfg.FilePath, shortID.String(), longURL)
+	fileName := configuration.Cfg.FilePath
+	defer os.Remove(fileName)
+	saver, err := storage.NewSaver(fileName)
+	if err != nil {
+		http.Error(w, "Can't save info to file", http.StatusBadRequest)
+		return
+	}
+	defer saver.Close()
+	if err := saver.WriteKeymap(&ourPoorURL); err != nil {
+		http.Error(w, "Can't save info to the file", http.StatusBadRequest)
+		return
+	}
+	//storage.FileWriteFunc(configuration.Cfg.FilePath, shortID.String(), longURL)
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(&resobj)
