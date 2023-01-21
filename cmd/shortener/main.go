@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	//"os"
-
+	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
@@ -26,7 +26,7 @@ func NewRouter() chi.Router {
 }
 
 func main() {
-	if err := env.Parse(&handlers.Cfg); err != nil {
+	if err := env.Parse(&configuration.Cfg); err != nil {
 		log.Fatal(err)
 	}
 	r := chi.NewRouter()
@@ -39,5 +39,5 @@ func main() {
 		r.Post("/", handlers.PostURLHandler)
 		r.Post("/api/shorten", handlers.PostJSONHandler)
 	})
-	log.Fatal(http.ListenAndServe(handlers.Cfg.ServerAddress, r))
+	log.Fatal(http.ListenAndServe(configuration.Cfg.ServerAddress, r))
 }
