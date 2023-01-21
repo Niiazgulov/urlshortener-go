@@ -2,7 +2,8 @@ package storage
 
 import (
 	"encoding/json"
-	// "log"
+	"io/ioutil"
+	"log"
 	"os"
 	// "github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
 	//"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
@@ -36,20 +37,36 @@ type JSONKeymap struct {
 // 	return s.file.Close()
 // }
 
-// func FileWriteFunc(fileadress, short, longURL string) {
-// 	file, err := os.OpenFile(fileadress, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	urlmap := make(map[string]string)
-// 	urlmap[short] = longURL
-// 	jsonData, err := json.Marshal(urlmap)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	file.Write(jsonData)
-// 	defer file.Close()
-// }
+func FileWriteFunc(fileadress, short, longURL string) {
+	file, err := os.OpenFile(fileadress, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		log.Fatal(err)
+	}
+	urlmap := make(map[string]string)
+	urlmap[short] = longURL
+	jsonData, err := json.Marshal(urlmap)
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Write(jsonData)
+	defer file.Close()
+}
+
+func FileReadFunc(fileadress string) (resultshort map[string]string) {
+	// file, err := os.OpenFile(fileadress, os.O_RDONLY, 0777)
+	// if err != nil {
+	// 	return "error FileReadFunc"
+	// }
+	file, err := ioutil.ReadFile(fileadress)
+	if err != nil {
+		return nil
+	}
+	var byteData map[string]string
+	if err := json.Unmarshal(file, byteData); err != nil {
+		return nil
+	}
+	return byteData
+}
 
 // type loader struct {
 // 	file    *os.File
