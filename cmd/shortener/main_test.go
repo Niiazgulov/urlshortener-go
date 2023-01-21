@@ -39,6 +39,6 @@ func TestRouter(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, statusCode)
 	statusCode, body = testRequest(t, ts, "GET", "/{id}")
 	original := testkeymap[body]
-	assert.Equal(t, http.StatusBadRequest, statusCode)
+	assert.Equal(t, http.StatusTemporaryRedirect, statusCode)
 	assert.Equal(t, original, body)
 }

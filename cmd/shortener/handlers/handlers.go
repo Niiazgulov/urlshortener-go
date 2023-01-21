@@ -90,7 +90,8 @@ func PostURLHandler(w http.ResponseWriter, r *http.Request) {
 	// file.Write(jsonData)
 	// defer file.Close()
 	//filename := "events.log"
-	storage.FileWriteFunc(short, longURL)
+	configuration.Cfg.FilePath = "OurURL.json"
+	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shorturl.String()))
 }
@@ -167,7 +168,8 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	BaseCfgURL, _ := url.Parse(configuration.Cfg.BaseURLAddress)
 	shortURL := BaseCfgURL.JoinPath(shortID.String())
 	resobj := JSONKeymap{ShortJSON: shortURL.String()}
-	storage.FileWriteFunc(shortID.String(), longURL)
+	configuration.Cfg.FilePath = "OurURL.json"
+	storage.FileWriteFunc(configuration.Cfg.FilePath, shortID.String(), longURL)
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(&resobj)

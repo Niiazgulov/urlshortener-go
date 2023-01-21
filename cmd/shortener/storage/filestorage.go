@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-
-	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
+	//"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 )
 
 type JSONKeymap struct {
@@ -35,9 +34,8 @@ func (s *saver) Close() error {
 	return s.file.Close()
 }
 
-func FileWriteFunc(short, longURL string) {
-	FilePath := configuration.Cfg.FilePath
-	file, err := os.OpenFile(FilePath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+func FileWriteFunc(fileadress, short, longURL string) {
+	file, err := os.OpenFile(fileadress, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		log.Fatal(err)
 	}
