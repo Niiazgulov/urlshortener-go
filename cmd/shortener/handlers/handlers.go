@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+
+	// "log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -17,10 +19,14 @@ import (
 
 var (
 	repo repository.AddorGetURL
+	// err  error
+	//Cfg configuration.Config
 )
 
 func init() {
+	//var Cfg configuration.Config
 	repo = repository.NewMemoryRepository()
+	// configuration.MakeConfig()
 }
 
 const (
