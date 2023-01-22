@@ -45,8 +45,8 @@ func MakeConfig() (*Config, error) {
 }
 
 func MakeCfgVars(ba, sa, fp string) {
-	flag.StringVar(&sa, "a", "", "server adress")
-	flag.StringVar(&ba, "b", "", "base url adress")
+	flag.StringVar(&sa, "a", ":8080", "server adress")
+	flag.StringVar(&ba, "b", "http://localhost:8080/", "base url adress")
 	flag.StringVar(&fp, "f", "", "file path")
 	flag.Parse()
 	ba = ChoosePriority(ba, os.Getenv("BASE_URL"), "http://localhost:8080")
