@@ -9,6 +9,9 @@ type Config struct {
 	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 	FilePath       string `env:"FILE_STORAGE_PATH"`
+	// ServerAddress  string
+	// BaseURLAddress string
+	// FilePath       string
 }
 
 var (
@@ -49,7 +52,7 @@ func MakeCfgVars(ba, sa, fp string) {
 	flag.StringVar(&ba, "b", "http://localhost:8080/", "base url adress")
 	flag.StringVar(&fp, "f", "", "file path")
 	flag.Parse()
-	ba = ChoosePriority(ba, os.Getenv("BASE_URL"), "http://localhost:8080")
-	sa = ChoosePriority(sa, os.Getenv("SERVER_ADDRESS"), ":8080")
-	fp = ChoosePriority(fp, os.Getenv("FILE_STORAGE_PATH"))
+	ba = ChoosePriority(os.Getenv("BASE_URL"), ba, "http://localhost:8080")
+	sa = ChoosePriority(os.Getenv("SERVER_ADDRESS"), sa, ":8080")
+	fp = ChoosePriority(os.Getenv("FILE_STORAGE_PATH"), fp)
 }

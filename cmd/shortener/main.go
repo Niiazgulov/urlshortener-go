@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	// "flag"
+	"flag"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
@@ -30,11 +30,11 @@ func main() {
 	if err := env.Parse(&configuration.Cfg); err != nil {
 		log.Fatal(err)
 	}
-	configuration.MakeCfgVars(configuration.Cfg.BaseURLAddress, configuration.Cfg.ServerAddress, configuration.Cfg.FilePath)
-	// flag.StringVar(&configuration.Cfg.ServerAddress, "a", "", "server adress")
-	// flag.StringVar(&configuration.Cfg.BaseURLAddress, "b", "", "base url adress")
-	// flag.StringVar(&configuration.Cfg.FilePath, "f", "", "file path")
-	// flag.Parse()
+	// configuration.MakeCfgVars(configuration.Cfg.BaseURLAddress, configuration.Cfg.ServerAddress, configuration.Cfg.FilePath)
+	flag.StringVar(&configuration.Cfg.ServerAddress, "a", ":8080", "server adress")
+	flag.StringVar(&configuration.Cfg.BaseURLAddress, "b", "http://localhost:8080/", "base url adress")
+	flag.StringVar(&configuration.Cfg.FilePath, "f", "", "file path")
+	flag.Parse()
 	// flag.StringVar(&configuration.FlagServer, "a", ":8080", "SERVER_ADDRESS")
 	// flag.StringVar(&configuration.FlagBase, "b", "http://localhost:8080/", "BASE_URL")
 	// flag.StringVar(&configuration.FlagFile, "f", "", "FILE_STORAGE_PATH")
