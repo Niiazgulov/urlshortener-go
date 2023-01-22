@@ -30,9 +30,9 @@ func main() {
 	if err := env.Parse(&configuration.Cfg); err != nil {
 		log.Fatal(err)
 	}
-	flag.StringVar(&configuration.Cfg.FilePath, "-f", "", "FILE_STORAGE_PATH")
-	flag.StringVar(&configuration.Cfg.BaseURLAddress, "-b", "http://localhost:8080/", "BASE_URL")
-	flag.StringVar(&configuration.Cfg.ServerAddress, "-a", ":8080", "SERVER_ADDRESS")
+	flag.StringVar(&configuration.Cfg.FilePath, "f", "", "FILE_STORAGE_PATH")
+	flag.StringVar(&configuration.Cfg.BaseURLAddress, "b", "http://localhost:8080/", "BASE_URL")
+	flag.StringVar(&configuration.Cfg.ServerAddress, "a", ":8080", "SERVER_ADDRESS")
 	flag.Parse()
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
