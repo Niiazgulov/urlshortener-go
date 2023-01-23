@@ -9,18 +9,34 @@ type Config struct {
 	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 	FilePath       string `env:"FILE_STORAGE_PATH"`
-	// ServerAddress  string
-	// BaseURLAddress string
-	// FilePath       string
 }
 
 var (
 	Cfg Config
-
-	FlagServer string
-	FlagBase   string
-	FlagFile   string
+	// FlagServer string
+	// FlagBase   string
+	// FlagFile   string
 )
+
+func NewConfig() (*Config, error) {
+
+	cfg := &Config{
+		BaseURLAddress: "",
+		ServerAddress:  "",
+		FilePath:       "",
+	}
+
+	flag.StringVar(&cfg.ServerAddress, "a", "", "host to listen on")
+	flag.StringVar(&cfg.BaseURLAddress, "b", "", "base url")
+	flag.StringVar(&cfg.FilePath, "f", "", "file storage path")
+	flag.Parse()
+
+	cfg.BaseURLAddress = ChoosePriority(cfg.BaseURLAddress, os.Getenv("BASE_URL"), "http://localhost:8080")
+	cfg.ServerAddress = ChoosePriority(cfg.ServerAddress, os.Getenv("SERVER_ADDRESS"), ":8080")
+	cfg.FilePath = ChoosePriority(cfg.FilePath, os.Getenv("FILE_STORAGE_PATH"))
+
+	return cfg, nil
+}
 
 func GetEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
