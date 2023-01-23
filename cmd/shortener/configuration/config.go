@@ -6,9 +6,12 @@ import (
 )
 
 type Config struct {
-	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
-	FilePath       string `env:"FILE_STORAGE_PATH"`
+	// ServerAddress  string `env:"SERVER_ADDRESS" envDefault:":8080"`
+	// BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
+	// FilePath       string `env:"FILE_STORAGE_PATH"`
+	ServerAddress  string `json:"server_address"`
+	BaseURLAddress string `json:"base_url"`
+	FilePath       string `json:"file_storage_path"`
 }
 
 var (
