@@ -17,10 +17,17 @@ type Config struct {
 var (
 	Cfg Config
 
-// FlagServer string
-// FlagBase   string
-// FlagFile   string
+	FlagServer string
+	FlagBase   string
+	FlagFile   string
 )
+
+func GetEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
 
 func ChoosePriority(strings ...string) string {
 	for _, str := range strings {
