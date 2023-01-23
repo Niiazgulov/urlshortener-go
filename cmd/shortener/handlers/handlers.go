@@ -70,6 +70,11 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ourPoorURL := repository.URL{ShortURL: short, OriginalURL: longURL}
+	err = repo.AddURL(ourPoorURL)
+	if err != nil {
+		http.Error(w, "Status internal server error", http.StatusBadRequest)
+		return
+	}
 	if configuration.Cfg.FilePath != "" {
 		storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
 	} else {
@@ -85,17 +90,22 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
-	var originalURL string
-	if configuration.Cfg.FilePath != "" {
-		byteInfo := storage.FileReadFunc(configuration.Cfg.FilePath)
-		originalURL = byteInfo[shortnew]
-	} else {
-		var err error
-		originalURL, err = repo.GetURL(shortnew)
-		if err != nil {
-			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
-			return
-		}
+	// var originalURL string
+	// if configuration.Cfg.FilePath != "" {
+	// 	byteInfo := storage.FileReadFunc(configuration.Cfg.FilePath)
+	// 	originalURL = byteInfo[shortnew]
+	// } else {
+	// 	var err error
+	// 	originalURL, err = repo.GetURL(shortnew)
+	// 	if err != nil {
+	// 		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+	// 		return
+	// 	}
+	// }
+	originalURL, err := repo.GetURL(shortnew)
+	if err != nil {
+		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+		return
 	}
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
