@@ -85,18 +85,6 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetHandler(w http.ResponseWriter, r *http.Request) {
 	shortnew := chi.URLParam(r, "id")
-	// var originalURL string
-	// if configuration.Cfg.FilePath != "" {
-	// 	byteInfo := storage.FileReadFunc(configuration.Cfg.FilePath)
-	// 	originalURL = byteInfo[shortnew]
-	// } else {
-	// 	var err error
-	// 	originalURL, err = repo.GetURL(shortnew)
-	// 	if err != nil {
-	// 		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
-	// 		return
-	// 	}
-	// }
 	originalURL, err := repo.GetURL(shortnew)
 	if err != nil {
 		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
@@ -139,6 +127,27 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&resobj)
 }
 
+func UncomprMiddlw(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var reader io.Reader
+
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			gz, err := gzip.NewReader(r.Body)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			reader = gz
+			r.Body = io.NopCloser(reader)
+			defer gz.Close()
+		} else {
+			reader = r.Body
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // type gzipWriter struct {
 // 	http.ResponseWriter
 // 	Writer io.Writer
@@ -160,24 +169,3 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 // 		next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
 // 	})
 // }
-
-func UncomprMiddlw(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var reader io.Reader
-
-		if r.Header.Get("Content-Encoding") == "gzip" {
-			gz, err := gzip.NewReader(r.Body)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			reader = gz
-			r.Body = io.NopCloser(reader)
-			defer gz.Close()
-		} else {
-			reader = r.Body
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}

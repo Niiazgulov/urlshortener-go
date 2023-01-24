@@ -2,7 +2,7 @@ package storage
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	// "io/ioutil"
 	"log"
 	"os"
 )
@@ -28,7 +28,8 @@ func FileWriteFunc(fileadress, short, longURL string) {
 }
 
 func FileReadFunc(fileadress string) (resultshort map[string]string) {
-	file, err := ioutil.ReadFile(fileadress)
+	// file, err := ioutil.ReadFile(fileadress)
+	file, err := os.ReadFile(fileadress)
 	if err != nil {
 		return nil
 	}
