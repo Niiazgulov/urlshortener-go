@@ -4,6 +4,8 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"io"
+
+	//"os"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -17,15 +19,21 @@ import (
 )
 
 var (
-	repo repository.AddGetFileInterf
-	// repo repository.AddorGetURL
+	// repo repository.AddGetFileInterf
+	repo repository.AddorGetURL
 	// repofile storage.AddGetFileInterf
 )
 
 func init() {
 	repo = repository.NewFileStorage()
-	// repo = repository.NewMemoryRepository()
+	//repo = repository.NewMemoryRepository()
 	// repofile = storage.NewFileStorage()
+	// var err error
+	// repository.FileTemp, err = os.OpenFile(configuration.Cfg.FilePath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer repository.FileTemp.Close()
 }
 
 const (
@@ -69,7 +77,7 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ourPoorURL := repository.URL{ShortURL: short, OriginalURL: longURL}
-	err = repo.AddURL(configuration.Cfg.FilePath, ourPoorURL)
+	err = repo.AddURL(ourPoorURL)
 	if err != nil {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
@@ -118,7 +126,7 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ourPoorURL := repository.URL{ShortURL: shortID.String(), OriginalURL: longURL}
-	err = repo.AddURL(configuration.Cfg.FilePath, ourPoorURL)
+	err = repo.AddURL(ourPoorURL)
 	if err != nil {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
