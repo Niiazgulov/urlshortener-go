@@ -6,9 +6,6 @@ import (
 )
 
 type Config struct {
-	// ServerAddress  string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	// BaseURLAddress string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
-	// FilePath       string `env:"FILE_STORAGE_PATH"`
 	ServerAddress  string `json:"server_address"`
 	BaseURLAddress string `json:"base_url"`
 	FilePath       string `json:"file_storage_path"`
@@ -26,13 +23,13 @@ func NewConfig() (*Config, error) {
 	flag.StringVar(&cfg.BaseURLAddress, "b", "", "base url")
 	flag.StringVar(&cfg.FilePath, "f", "", "file storage path")
 	flag.Parse()
-	cfg.BaseURLAddress = ChoosePriority(cfg.BaseURLAddress, os.Getenv("BASE_URL"), "http://localhost:8080")
-	cfg.ServerAddress = ChoosePriority(cfg.ServerAddress, os.Getenv("SERVER_ADDRESS"), ":8080")
-	cfg.FilePath = ChoosePriority(cfg.FilePath, os.Getenv("FILE_STORAGE_PATH"))
+	cfg.BaseURLAddress = pickFirstNonEmpty(cfg.BaseURLAddress, os.Getenv("BASE_URL"), "http://localhost:8080")
+	cfg.ServerAddress = pickFirstNonEmpty(cfg.ServerAddress, os.Getenv("SERVER_ADDRESS"), ":8080")
+	cfg.FilePath = pickFirstNonEmpty(cfg.FilePath, os.Getenv("FILE_STORAGE_PATH"))
 	return cfg, nil
 }
 
-func ChoosePriority(strings ...string) string {
+func pickFirstNonEmpty(strings ...string) string {
 	for _, str := range strings {
 		if str != "" {
 			return str

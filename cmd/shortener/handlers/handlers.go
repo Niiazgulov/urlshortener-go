@@ -17,11 +17,15 @@ import (
 )
 
 var (
-	repo repository.AddorGetURL
+	repo repository.AddGetFileInterf
+	// repo repository.AddorGetURL
+	// repofile storage.AddGetFileInterf
 )
 
 func init() {
-	repo = repository.NewMemoryRepository()
+	repo = repository.NewFileStorage()
+	// repo = repository.NewMemoryRepository()
+	// repofile = storage.NewFileStorage()
 }
 
 const (
@@ -65,20 +69,23 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ourPoorURL := repository.URL{ShortURL: short, OriginalURL: longURL}
-	err = repo.AddURL(ourPoorURL)
+	err = repo.AddURL(configuration.Cfg.FilePath, ourPoorURL)
 	if err != nil {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
 	}
-	if configuration.Cfg.FilePath != "" {
-		storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
-	} else {
-		err = repo.AddURL(ourPoorURL)
-		if err != nil {
-			http.Error(w, "Status internal server error", http.StatusBadRequest)
-			return
-		}
-	}
+	// if configuration.Cfg.FilePath != "" {
+	// 	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
+	// }
+	// if configuration.Cfg.FilePath != "" {
+	// 	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
+	// } else {
+	// 	err = repo.AddURL(ourPoorURL)
+	// 	if err != nil {
+	// 		http.Error(w, "Status internal server error", http.StatusBadRequest)
+	// 		return
+	// 	}
+	// }
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shorturl.String()))
 }
@@ -111,7 +118,7 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ourPoorURL := repository.URL{ShortURL: shortID.String(), OriginalURL: longURL}
-	err = repo.AddURL(ourPoorURL)
+	err = repo.AddURL(configuration.Cfg.FilePath, ourPoorURL)
 	if err != nil {
 		http.Error(w, "Status internal server error", http.StatusBadRequest)
 		return
@@ -119,15 +126,15 @@ func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
 	BaseCfgURL, _ := url.Parse(configuration.Cfg.BaseURLAddress)
 	shortURL := BaseCfgURL.JoinPath(shortID.String())
 	resobj := storage.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
-	if configuration.Cfg.FilePath != "" {
-		storage.FileWriteFunc(configuration.Cfg.FilePath, shortURL.String(), longURL)
-	}
+	// if configuration.Cfg.FilePath != "" {
+	// 	storage.FileWriteFunc(configuration.Cfg.FilePath, shortURL.String(), longURL)
+	// }
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(&resobj)
 }
 
-func UncomprMiddlw(next http.Handler) http.Handler {
+func DecomprMiddlw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var reader io.Reader
 
@@ -147,25 +154,3 @@ func UncomprMiddlw(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
-// type gzipWriter struct {
-// 	http.ResponseWriter
-// 	Writer io.Writer
-// }
-
-// func ComprMiddlw(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-// 			next.ServeHTTP(w, r)
-// 			return
-// 		}
-// 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
-// 		if err != nil {
-// 			io.WriteString(w, err.Error())
-// 			return
-// 		}
-// 		defer gz.Close()
-// 		w.Header().Set("Content-Encoding", "gzip")
-// 		next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
-// 	})
-// }
