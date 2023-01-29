@@ -10,7 +10,7 @@ type Config struct {
 	ServerAddress  string   `json:"server_address"`
 	BaseURLAddress string   `json:"base_url"`
 	FilePath       string   `json:"file_storage_path"`
-	ConfigUrl      *url.URL `json:"config_url"`
+	ConfigURL      *url.URL `json:"config_url"`
 }
 
 var Cfg Config
@@ -29,7 +29,7 @@ func NewConfig() (*Config, error) {
 	cfg.ServerAddress = pickFirstNonEmpty(cfg.ServerAddress, os.Getenv("SERVER_ADDRESS"), ":8080")
 	// cfg.FilePath = pickFirstNonEmpty(cfg.FilePath, os.Getenv("FILE_STORAGE_PATH"))
 	cfg.FilePath = pickFirstNonEmpty(cfg.FilePath, os.Getenv("FILE_STORAGE_PATH"), "OurURL.json")
-	cfg.ConfigUrl, _ = url.Parse(cfg.BaseURLAddress)
+	cfg.ConfigURL, _ = url.Parse(cfg.BaseURLAddress)
 	return cfg, nil
 }
 

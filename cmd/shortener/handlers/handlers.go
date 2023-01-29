@@ -63,7 +63,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			return
 		}
 		short := shortParse.String()
-		shorturl := configuration.Cfg.ConfigUrl.JoinPath(short)
+		shorturl := configuration.Cfg.ConfigURL.JoinPath(short)
 		longURLByte, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -134,7 +134,7 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			http.Error(w, "Status internal server error", http.StatusBadRequest)
 			return
 		}
-		shortURL := configuration.Cfg.ConfigUrl.JoinPath(shortID.String())
+		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID.String())
 		resobj := storage.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
 		// if configuration.Cfg.FilePath != "" {
 		// 	storage.FileWriteFunc(configuration.Cfg.FilePath, shortURL.String(), longURL)
