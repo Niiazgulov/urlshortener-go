@@ -4,8 +4,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"io"
-
-	//"os"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -14,27 +12,8 @@ import (
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
-	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/storage"
 	"github.com/go-chi/chi/v5"
 )
-
-// var (
-// 	// repo repository.AddGetFileInterf
-// 	repo repository.AddorGetURL
-// 	// repofile storage.AddGetFileInterf
-// )
-
-// func init() {
-// 	repo = repository.NewFileStorage()
-// 	//repo = repository.NewMemoryRepository()
-// 	// repofile = storage.NewFileStorage()
-// 	// var err error
-// 	// repository.FileTemp, err = os.OpenFile(configuration.Cfg.FilePath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
-// 	// if err != nil {
-// 	// 	panic(err)
-// 	// }
-// 	// defer repository.FileTemp.Close()
-// }
 
 const (
 	symbols        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -81,18 +60,6 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			http.Error(w, "Status internal server error", http.StatusBadRequest)
 			return
 		}
-		// if configuration.Cfg.FilePath != "" {
-		// 	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
-		// }
-		// if configuration.Cfg.FilePath != "" {
-		// 	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
-		// } else {
-		// 	err = repo.AddURL(ourPoorURL)
-		// 	if err != nil {
-		// 		http.Error(w, "Status internal server error", http.StatusBadRequest)
-		// 		return
-		// 	}
-		// }
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl.String()))
 	}
@@ -113,7 +80,7 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 
 func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var tempStrorage storage.JSONKeymap
+		var tempStrorage repository.JSONKeymap
 		if err := json.NewDecoder(r.Body).Decode(&tempStrorage); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -135,10 +102,7 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			return
 		}
 		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID.String())
-		resobj := storage.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
-		// if configuration.Cfg.FilePath != "" {
-		// 	storage.FileWriteFunc(configuration.Cfg.FilePath, shortURL.String(), longURL)
-		// }
+		resobj := repository.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(&resobj)

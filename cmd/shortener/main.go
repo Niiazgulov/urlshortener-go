@@ -3,8 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-
-	// "net/url"
 	"os"
 
 	"github.com/NYTimes/gziphandler"
@@ -49,7 +47,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//repository.FileTemp2 = *repository.FileTemp
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
