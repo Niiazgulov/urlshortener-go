@@ -18,27 +18,26 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-var (
-	// repo repository.AddGetFileInterf
-	repo repository.AddorGetURL
-	// repofile storage.AddGetFileInterf
-)
+// var (
+// 	// repo repository.AddGetFileInterf
+// 	repo repository.AddorGetURL
+// 	// repofile storage.AddGetFileInterf
+// )
 
-func init() {
-	repo = repository.NewFileStorage()
-	//repo = repository.NewMemoryRepository()
-	// repofile = storage.NewFileStorage()
-	// var err error
-	// repository.FileTemp, err = os.OpenFile(configuration.Cfg.FilePath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer repository.FileTemp.Close()
-}
+// func init() {
+// 	repo = repository.NewFileStorage()
+// 	//repo = repository.NewMemoryRepository()
+// 	// repofile = storage.NewFileStorage()
+// 	// var err error
+// 	// repository.FileTemp, err = os.OpenFile(configuration.Cfg.FilePath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+// 	// if err != nil {
+// 	// 	panic(err)
+// 	// }
+// 	// defer repository.FileTemp.Close()
+// }
 
 const (
 	symbols        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	BaseURL        = "http://localhost:8080/"
 	ShortURLMaxLen = 7
 )
 
@@ -52,94 +51,98 @@ func generateRandomString() string {
 	return string(result)
 }
 
-func PostHandler(w http.ResponseWriter, r *http.Request) {
-	shortID := generateRandomString()
-	for _, err := repo.GetURL(shortID); err == nil; _, err = repo.GetURL(shortID) {
-		shortID = generateRandomString()
+func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		shortID := generateRandomString()
+		for _, err := repo.GetURL(shortID); err == nil; _, err = repo.GetURL(shortID) {
+			shortID = generateRandomString()
+		}
+		shortParse, err := url.Parse(shortID)
+		if err != nil {
+			http.Error(w, "unable to Parse shortID", http.StatusBadRequest)
+			return
+		}
+		short := shortParse.String()
+		shorturl := configuration.Cfg.ConfigUrl.JoinPath(short)
+		longURLByte, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "can't read Body", http.StatusBadRequest)
+			return
+		}
+		longURL := strings.TrimPrefix(string(longURLByte), "url=")
+		longURL, err = url.QueryUnescape(longURL)
+		if err != nil {
+			http.Error(w, "unable to unescape query in input url", http.StatusBadRequest)
+			return
+		}
+		ourPoorURL := repository.URL{ShortURL: short, OriginalURL: longURL}
+		err = repo.AddURL(ourPoorURL)
+		if err != nil {
+			http.Error(w, "Status internal server error", http.StatusBadRequest)
+			return
+		}
+		// if configuration.Cfg.FilePath != "" {
+		// 	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
+		// }
+		// if configuration.Cfg.FilePath != "" {
+		// 	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
+		// } else {
+		// 	err = repo.AddURL(ourPoorURL)
+		// 	if err != nil {
+		// 		http.Error(w, "Status internal server error", http.StatusBadRequest)
+		// 		return
+		// 	}
+		// }
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(shorturl.String()))
 	}
-	shortParse, err := url.Parse(shortID)
-	if err != nil {
-		http.Error(w, "unable to Parse shortID", http.StatusBadRequest)
-		return
-	}
-	short := shortParse.String()
-	BaseCfgURL, _ := url.Parse(configuration.Cfg.BaseURLAddress)
-	shorturl := BaseCfgURL.JoinPath(short)
-	longURLByte, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "can't read Body", http.StatusBadRequest)
-		return
-	}
-	longURL := strings.TrimPrefix(string(longURLByte), "url=")
-	longURL, err = url.QueryUnescape(longURL)
-	if err != nil {
-		http.Error(w, "unable to unescape query in input url", http.StatusBadRequest)
-		return
-	}
-	ourPoorURL := repository.URL{ShortURL: short, OriginalURL: longURL}
-	err = repo.AddURL(ourPoorURL)
-	if err != nil {
-		http.Error(w, "Status internal server error", http.StatusBadRequest)
-		return
-	}
-	// if configuration.Cfg.FilePath != "" {
-	// 	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
-	// }
-	// if configuration.Cfg.FilePath != "" {
-	// 	storage.FileWriteFunc(configuration.Cfg.FilePath, short, longURL)
-	// } else {
-	// 	err = repo.AddURL(ourPoorURL)
-	// 	if err != nil {
-	// 		http.Error(w, "Status internal server error", http.StatusBadRequest)
-	// 		return
-	// 	}
-	// }
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(shorturl.String()))
 }
 
-func GetHandler(w http.ResponseWriter, r *http.Request) {
-	shortnew := chi.URLParam(r, "id")
-	originalURL, err := repo.GetURL(shortnew)
-	if err != nil {
-		http.Error(w, "unable to GET Original url", http.StatusBadRequest)
-		return
+func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		shortnew := chi.URLParam(r, "id")
+		originalURL, err := repo.GetURL(shortnew)
+		if err != nil {
+			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Location", originalURL)
+		w.WriteHeader(http.StatusTemporaryRedirect)
 	}
-	w.Header().Set("Location", originalURL)
-	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func PostJSONHandler(w http.ResponseWriter, r *http.Request) {
-	var tempStrorage storage.JSONKeymap
-	if err := json.NewDecoder(r.Body).Decode(&tempStrorage); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var tempStrorage storage.JSONKeymap
+		if err := json.NewDecoder(r.Body).Decode(&tempStrorage); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		longURL, err := url.QueryUnescape(tempStrorage.LongJSON)
+		if err != nil {
+			http.Error(w, "unable to QueryUnescape longURL", http.StatusBadRequest)
+			return
+		}
+		shortID, err := url.Parse(generateRandomString())
+		if err != nil {
+			http.Error(w, "unable to Parse shortID", http.StatusBadRequest)
+			return
+		}
+		ourPoorURL := repository.URL{ShortURL: shortID.String(), OriginalURL: longURL}
+		err = repo.AddURL(ourPoorURL)
+		if err != nil {
+			http.Error(w, "Status internal server error", http.StatusBadRequest)
+			return
+		}
+		shortURL := configuration.Cfg.ConfigUrl.JoinPath(shortID.String())
+		resobj := storage.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
+		// if configuration.Cfg.FilePath != "" {
+		// 	storage.FileWriteFunc(configuration.Cfg.FilePath, shortURL.String(), longURL)
+		// }
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(&resobj)
 	}
-	longURL, err := url.QueryUnescape(tempStrorage.LongJSON)
-	if err != nil {
-		http.Error(w, "unable to QueryUnescape longURL", http.StatusBadRequest)
-		return
-	}
-	shortID, err := url.Parse(generateRandomString())
-	if err != nil {
-		http.Error(w, "unable to Parse shortID", http.StatusBadRequest)
-		return
-	}
-	ourPoorURL := repository.URL{ShortURL: shortID.String(), OriginalURL: longURL}
-	err = repo.AddURL(ourPoorURL)
-	if err != nil {
-		http.Error(w, "Status internal server error", http.StatusBadRequest)
-		return
-	}
-	BaseCfgURL, _ := url.Parse(configuration.Cfg.BaseURLAddress)
-	shortURL := BaseCfgURL.JoinPath(shortID.String())
-	resobj := storage.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
-	// if configuration.Cfg.FilePath != "" {
-	// 	storage.FileWriteFunc(configuration.Cfg.FilePath, shortURL.String(), longURL)
-	// }
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(&resobj)
 }
 
 func DecomprMiddlw(next http.Handler) http.Handler {

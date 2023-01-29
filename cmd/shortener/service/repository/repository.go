@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
-
-	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 )
 
 var (
 	ErrorKeyNotFound     = errors.New("the key is not found")
 	ErrorKeyNotSpecified = errors.New("the key is not specified")
 	FileTemp             *os.File
-	err                  error
+	//FileTemp2            os.File
+	// err                  error
 )
 
 // func init() {
@@ -71,8 +70,8 @@ type FileStorage struct {
 
 func NewFileStorage() AddorGetURL {
 	return &FileStorage{
-		allurls: make(map[string]string),
-		// FileJSON: FileTemp,
+		allurls:  make(map[string]string),
+		FileJSON: FileTemp,
 	}
 }
 
@@ -84,11 +83,10 @@ func (fs *FileStorage) AddURL(u URL) error {
 		return ErrorKeyNotSpecified
 	}
 	fs.allurls[u.ShortURL] = u.OriginalURL
-	// var err error
-	fs.FileJSON, err = os.OpenFile(configuration.Cfg.FilePath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
-	if err != nil {
-		panic(err)
-	}
+	// fs.FileJSON, err = os.OpenFile(configuration.Cfg.FilePath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+	// if err != nil {
+	// 	panic(err)
+	// }
 	jsonData, err := json.Marshal(fs.allurls)
 	if err != nil {
 		panic(err)
