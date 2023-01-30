@@ -24,7 +24,6 @@ func main() {
 	}
 	configuration.Cfg = *cfg
 	fileTemp, err := os.OpenFile(configuration.Cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
-	// fileTemp, err := os.OpenFile(configuration.Cfg.FilePath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		log.Fatal(err)
 	}

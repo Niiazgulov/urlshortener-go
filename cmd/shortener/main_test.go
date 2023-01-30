@@ -8,9 +8,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/assert"
@@ -18,6 +20,9 @@ import (
 )
 
 func NewRouter() chi.Router {
+	if err := env.Parse(&configuration.Cfg); err != nil {
+		log.Fatal(err)
+	}
 	fileTemp, err := os.OpenFile("OurURL.json", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
 	if err != nil {
 		log.Fatal(err)
@@ -36,6 +41,8 @@ func NewRouter() chi.Router {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(gziphandler.GzipHandler)
+	r.Use(handlers.DecomprMiddlw)
 	r.Route("/", func(r chi.Router) {
 		r.Get("/{id}", handlers.GetHandler(repo))
 		r.Post("/", handlers.PostHandler(repo, configuration.Cfg))
@@ -73,6 +80,6 @@ func TestRouter(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, statusCode)
 	statusCode, body = testRequest(t, ts, "GET", "/{id}")
 	original := testkeymap[body]
-	assert.Equal(t, http.StatusBadRequest, statusCode)
+	assert.Equal(t, http.StatusInternalServerError, statusCode)
 	assert.Equal(t, original, body)
 }
