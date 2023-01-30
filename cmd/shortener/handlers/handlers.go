@@ -72,11 +72,7 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		shortnew := chi.URLParam(r, "id")
 		originalURL, err := repo.GetURL(shortnew)
-		if err != nil {
-			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
-			return
-		}
-		if err != nil {
+		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) {
 			log.Printf("unable to get key from repo: %v", err)
 			http.Error(w, "unable to GET Original url", http.StatusInternalServerError)
 			return
