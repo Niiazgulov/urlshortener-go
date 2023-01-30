@@ -3,18 +3,25 @@ package repository
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"os"
 )
 
 var (
-	ErrorKeyNotFound     = errors.New("the key is not found")
-	ErrorKeyNotSpecified = errors.New("the key is not specified")
-	FileTemp             *os.File
+	ErrKeyNotFound     = errors.New("the key is not found")
+	ErrKeyNotSpecified = errors.New("the key is not specified")
+	ErrKeyNotExists    = errors.New("the key is not exists")
 )
 
 type JSONKeymap struct {
 	ShortJSON string `json:"result,omitempty"`
 	LongJSON  string `json:"url,omitempty"`
+}
+
+type UserURLs struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
 }
 
 type URL struct {
@@ -32,11 +39,21 @@ type FileStorage struct {
 	FileJSON *os.File
 }
 
-func NewFileStorage() AddorGetURL {
-	return &FileStorage{
-		allurls:  make(map[string]string),
-		FileJSON: FileTemp,
+func NewFileStorage(f *os.File) (AddorGetURL, error) {
+	m := make(map[string]string)
+	if err := json.NewDecoder(f).Decode(&m); err != nil {
+		if err == io.EOF {
+			return &FileStorage{
+				allurls:  make(map[string]string),
+				FileJSON: f,
+			}, nil
+		}
+		return nil, fmt.Errorf("unable to unmarshal file into map: %w", err)
 	}
+	return &FileStorage{
+		allurls:  m,
+		FileJSON: f,
+	}, nil
 }
 
 func (fs *FileStorage) AddURL(u URL) error {
@@ -44,24 +61,26 @@ func (fs *FileStorage) AddURL(u URL) error {
 		fs.allurls = make(map[string]string)
 	}
 	if u.ShortURL == "" {
-		return ErrorKeyNotSpecified
+		return ErrKeyNotSpecified
 	}
 	fs.allurls[u.ShortURL] = u.OriginalURL
 	jsonData, err := json.Marshal(fs.allurls)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("unable to marshal internal file storage map: %w", err)
+	}
+	if err := os.Truncate("OurURL.json", 0); err != nil {
+		return fmt.Errorf("unable to Truncate file: %w", err)
 	}
 	fs.FileJSON.Write(jsonData)
-	defer fs.FileJSON.Close()
 	return nil
 }
 
 func (fs *FileStorage) GetURL(key string) (string, error) {
 	if key == "" {
-		return "", ErrorKeyNotSpecified
+		return "", ErrKeyNotSpecified
 	}
 	if value, ok := fs.allurls[key]; ok {
 		return value, nil
 	}
-	return "", ErrorKeyNotFound
+	return "", ErrKeyNotFound
 }

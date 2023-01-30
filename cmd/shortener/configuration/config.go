@@ -2,6 +2,7 @@ package configuration
 
 import (
 	"flag"
+	"fmt"
 	"net/url"
 	"os"
 )
@@ -28,7 +29,11 @@ func NewConfig() (*Config, error) {
 	cfg.BaseURLAddress = pickFirstNonEmpty(cfg.BaseURLAddress, os.Getenv("BASE_URL"), "http://localhost:8080")
 	cfg.ServerAddress = pickFirstNonEmpty(cfg.ServerAddress, os.Getenv("SERVER_ADDRESS"), ":8080")
 	cfg.FilePath = pickFirstNonEmpty(cfg.FilePath, os.Getenv("FILE_STORAGE_PATH"), "OurURL.json")
-	cfg.ConfigURL, _ = url.Parse(cfg.BaseURLAddress)
+	var err error
+	cfg.ConfigURL, err = url.Parse(cfg.BaseURLAddress)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse BaseURLAddress: %w", err)
+	}
 	return cfg, nil
 }
 

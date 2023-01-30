@@ -2,13 +2,47 @@ package main
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
+	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
+	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func NewRouter() chi.Router {
+	fileTemp, err := os.OpenFile(configuration.Cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		log.Fatal(err)
+	}
+	repo, err := repository.NewFileStorage(fileTemp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cfg, err := configuration.NewConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+	configuration.Cfg = *cfg
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Route("/", func(r chi.Router) {
+		r.Get("/{id}", handlers.GetHandler(repo))
+		r.Post("/", handlers.PostHandler(repo, configuration.Cfg))
+		r.Post("/api/shorten", handlers.PostJSONHandler(repo, configuration.Cfg))
+	})
+	return r
+}
 
 var testkeymap = map[string]string{}
 

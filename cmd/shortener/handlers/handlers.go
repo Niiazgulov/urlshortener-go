@@ -3,7 +3,9 @@ package handlers
 import (
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -33,16 +35,17 @@ func generateRandomString() string {
 func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		shortID := generateRandomString()
-		for _, err := repo.GetURL(shortID); err == nil; _, err = repo.GetURL(shortID) {
+		// Здесь мы проверяем что урл который мы сгенерировали отсутствует в базе
+		// если же он там есть, мы перегенерируем и так пока не получим уникальный
+		for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
+			if err != nil {
+				log.Printf("unable to get URL by short ID: %v", err)
+				http.Error(w, "unable to get url from DB", http.StatusInternalServerError)
+				return
+			}
 			shortID = generateRandomString()
 		}
-		shortParse, err := url.Parse(shortID)
-		if err != nil {
-			http.Error(w, "unable to Parse shortID", http.StatusBadRequest)
-			return
-		}
-		short := shortParse.String()
-		shorturl := configuration.Cfg.ConfigURL.JoinPath(short)
+		shorturl := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		longURLByte, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "can't read Body", http.StatusBadRequest)
@@ -54,7 +57,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			http.Error(w, "unable to unescape query in input url", http.StatusBadRequest)
 			return
 		}
-		ourPoorURL := repository.URL{ShortURL: short, OriginalURL: longURL}
+		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
 		err = repo.AddURL(ourPoorURL)
 		if err != nil {
 			http.Error(w, "Status internal server error", http.StatusBadRequest)
@@ -70,6 +73,15 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 		shortnew := chi.URLParam(r, "id")
 		originalURL, err := repo.GetURL(shortnew)
 		if err != nil {
+			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+			return
+		}
+		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) {
+			log.Printf("unable to get key from repo: %v", err)
+			http.Error(w, "unable to GET Original url", http.StatusInternalServerError)
+			return
+		}
+		if errors.Is(err, repository.ErrKeyNotExists) {
 			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
 			return
 		}
@@ -90,18 +102,22 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			http.Error(w, "unable to QueryUnescape longURL", http.StatusBadRequest)
 			return
 		}
-		shortID, err := url.Parse(generateRandomString())
-		if err != nil {
-			http.Error(w, "unable to Parse shortID", http.StatusBadRequest)
-			return
+		shortID := generateRandomString()
+		for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
+			if err != nil {
+				log.Printf("unable to get URL by short ID: %v", err)
+				http.Error(w, "unable to get url from DB", http.StatusInternalServerError)
+				return
+			}
+			shortID = generateRandomString()
 		}
-		ourPoorURL := repository.URL{ShortURL: shortID.String(), OriginalURL: longURL}
+		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
 		err = repo.AddURL(ourPoorURL)
 		if err != nil {
 			http.Error(w, "Status internal server error", http.StatusBadRequest)
 			return
 		}
-		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID.String())
+		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		resobj := repository.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -111,21 +127,15 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 
 func DecomprMiddlw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var reader io.Reader
-
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gz, err := gzip.NewReader(r.Body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			reader = gz
-			r.Body = io.NopCloser(reader)
+			r.Body = io.NopCloser(gz)
 			defer gz.Close()
-		} else {
-			reader = r.Body
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }
