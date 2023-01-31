@@ -41,14 +41,12 @@ type FileStorage struct {
 
 func NewFileStorage(f *os.File) (AddorGetURL, error) {
 	m := make(map[string]string)
-	if err := json.NewDecoder(f).Decode(&m); err != nil {
-		if err == io.EOF {
-			return &FileStorage{
-				allurls:  make(map[string]string),
-				FileJSON: f,
-			}, nil
-		}
+	err := json.NewDecoder(f).Decode(&m)
+	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("unable to unmarshal file into map: %w", err)
+	}
+	if err == io.EOF {
+		m = make(map[string]string)
 	}
 	return &FileStorage{
 		allurls:  m,
