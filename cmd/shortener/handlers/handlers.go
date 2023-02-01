@@ -115,6 +115,7 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
 			return
 		}
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		w.Header().Set("Location", originalURL)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	}
