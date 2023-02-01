@@ -212,20 +212,11 @@ const userIDCookie = "useridcookie"
 func getUserIDCookie(repo repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
 	var (
 		userID    string
-		checkAuth bool
 		signValue string
 		cookie    *http.Cookie
 	)
 	sign, err := r.Cookie(userIDCookie)
-	if err == nil {
-		signValue = sign.Value
-		userID, checkAuth, err = GetUserSign(signValue)
-		if err != nil {
-			log.Println("Error while checking of sign", err)
-			return "", nil, err
-		}
-	}
-	if err != nil || !checkAuth {
+	if err != nil {
 		userID, err = repo.AddNewUser()
 		if err != nil {
 			log.Println("Error while adding user", err)
@@ -237,9 +228,48 @@ func getUserIDCookie(repo repository.AddorGetURL, r *http.Request) (string, *htt
 			return "", nil, err
 		}
 		cookie = &http.Cookie{Name: userIDCookie, Value: signValue, MaxAge: 0}
+		return userID, cookie, nil // added
+	}
+	signValue = sign.Value
+	userID, _, err = GetUserSign(signValue)
+	if err != nil {
+		log.Println("Error while checking of sign", err)
+		return "", nil, err
 	}
 	return userID, cookie, nil
 }
+
+// func getUserIDCookie(repo repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
+// 	var (
+// 		userID    string
+// 		checkAuth bool
+// 		signValue string
+// 		cookie    *http.Cookie
+// 	)
+// 	sign, err := r.Cookie(userIDCookie)
+// 	if err == nil {
+// 		signValue = sign.Value
+// 		userID, checkAuth, err = GetUserSign(signValue)
+// 		if err != nil {
+// 			log.Println("Error while checking of sign", err)
+// 			return "", nil, err
+// 		}
+// 	}
+// 	if err != nil || !checkAuth {
+// 		userID, err = repo.AddNewUser()
+// 		if err != nil {
+// 			log.Println("Error while adding user", err)
+// 			return "", nil, err
+// 		}
+// 		signValue, err = NewUserSign(userID)
+// 		if err != nil {
+// 			log.Println("Error while creating of sign", err)
+// 			return "", nil, err
+// 		}
+// 		cookie = &http.Cookie{Name: userIDCookie, Value: signValue, MaxAge: 0}
+// 	}
+// 	return userID, cookie, nil
+// }
 
 func getUserID(r *http.Request) (string, error) {
 	encodedCookie, err := r.Cookie(userIDCookie)
