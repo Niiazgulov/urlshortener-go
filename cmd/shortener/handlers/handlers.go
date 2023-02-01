@@ -255,7 +255,7 @@ func getUserIDCookie(interf repository.AddorGetURL, r *http.Request) (string, *h
 	var signValue string
 	var cookie *http.Cookie
 
-	sign, err := r.Cookie("token")
+	sign, err := r.Cookie("useridcookie")
 	if err == nil {
 		signValue = sign.Value
 		userID, authOK, err = GetUserSign(signValue)
@@ -275,7 +275,7 @@ func getUserIDCookie(interf repository.AddorGetURL, r *http.Request) (string, *h
 			log.Println("Error while creating of sign", err)
 			return "0", nil, err
 		}
-		cookie = &http.Cookie{Name: "token", Value: signValue, MaxAge: 0}
+		cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
 	}
 	return userID, cookie, nil
 }
