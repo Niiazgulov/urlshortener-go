@@ -12,12 +12,12 @@ import (
 var key = []byte("encryption key")
 
 func NewUserSign(id string) (string, error) {
-	idint, err := strconv.Atoi(id)
+	intID, err := strconv.Atoi(id)
 	if err != nil {
 		return "", fmt.Errorf("unable to convert Id (NewUserSign func): %w", err)
 	}
-	iduint32 := uint32(idint)
-	databyte := binary.BigEndian.AppendUint32(nil, iduint32)
+	uint32ID := uint32(intID)
+	databyte := binary.BigEndian.AppendUint32(nil, uint32ID)
 	hash := hmac.New(sha256.New, key)
 	hash.Write(databyte)
 	sign := hash.Sum(nil)
@@ -26,39 +26,16 @@ func NewUserSign(id string) (string, error) {
 	return newsign, nil
 }
 
-// func GetUserSign(s string) (string, error) {
-// 	decodedbyte, err := hex.DecodeString(s)
-// 	if err != nil {
-// 		return "", fmt.Errorf("unable to Decode String (GetUserSign func): %w", err)
-// 	}
-// 	signuint32 := binary.BigEndian.Uint32(decodedbyte[:4])
-// 	hash := hmac.New(sha256.New, key)
-// 	hash.Write(decodedbyte[:4])
-// 	usersign := strconv.Itoa(int(signuint32))
-// 	return usersign, nil
-// }
-
 func GetUserSign(s string) (string, bool, error) {
-	data, err := hex.DecodeString(s)
+	decodedbyte, err := hex.DecodeString(s)
 	if err != nil {
-		return "0", false, err
+		return "", false, err
 	}
-	id := binary.BigEndian.Uint32(data[:4])
-	usersign := strconv.Itoa(int(id))
-	h := hmac.New(sha256.New, key)
-	h.Write(data[:4])
-	sign := h.Sum(nil)
-	return usersign, hmac.Equal(sign, data[4:]), nil
+	id := binary.BigEndian.Uint32(decodedbyte[:4])
+	userID := strconv.Itoa(int(id))
+	hash := hmac.New(sha256.New, key)
+	hash.Write(decodedbyte[:4])
+	usersign := hash.Sum(nil)
+	checkequal := hmac.Equal(usersign, decodedbyte[4:])
+	return userID, checkequal, nil
 }
-
-// func GetUserSign2(s string) (string, bool, error) {
-// 	decodedbyte, err := hex.DecodeString(s)
-// 	if err != nil {
-// 		return "", fmt.Errorf("unable to Decode String (GetUserSign func): %w", err)
-// 	}
-// 	signuint32 := binary.BigEndian.Uint32(decodedbyte[:4])
-// 	hash := hmac.New(sha256.New, key)
-// 	hash.Write(decodedbyte[:4])
-// 	usersign := strconv.Itoa(int(signuint32))
-// 	return usersign, nil
-// }

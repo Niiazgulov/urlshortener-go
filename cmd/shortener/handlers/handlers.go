@@ -126,55 +126,14 @@ type UserURLs struct {
 	OriginalURL string `json:"original_url"`
 }
 
-// mfunc
-// func GetUserUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		userID, err := getUserID(r)
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusNoContent)
-// 			return
-// 		}
-// 		urls, err := repo.FindAllUserUrls(userID)
-// 		// if err != nil {
-// 		// 	if err == repository.ErrKeyNotFound {
-// 		// 		w.WriteHeader(http.StatusNoContent)
-// 		// 	} else {
-// 		// 		log.Println("Error while getting URLs", err)
-// 		// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
-// 		// 	}
-// 		// }
-// 		if err != nil {
-// 			http.Error(w, err.Error(), http.StatusInternalServerError) // 505
-// 			return
-// 		}
-// 		if len(urls) == 0 {
-// 			w.WriteHeader(http.StatusNoContent)
-// 			return
-// 		}
-// 		var urlsList []UserURLs
-// 		for urlID, originalURL := range urls {
-// 			urlsList = append(urlsList, UserURLs{ShortURL: configuration.Cfg.BaseURLAddress + "/" + urlID, OriginalURL: originalURL})
-// 		}
-// 		resbyte, err := json.Marshal(urlsList)
-// 		if err != nil {
-// 			log.Println("Error while serializing response", err)
-// 			http.Error(w, "Internal server error", http.StatusInternalServerError) //506
-// 			return
-// 		}
-// 		w.Header().Set("content-type", "application/json")
-// 		w.WriteHeader(http.StatusOK)
-// 		w.Write(resbyte)
-// 	}
-// }
-
-func GetUserUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
+func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	return func(writer http.ResponseWriter, r *http.Request) {
 		userID, err := getUserID(r)
 		if err != nil {
 			writer.WriteHeader(http.StatusNoContent)
 			return
 		}
-		urls, err := repo.FindAllUserUrls(userID)
+		urlsmap, err := repo.FindAllUserUrls(userID)
 		if err != nil {
 			if err == repository.ErrKeyNotFound {
 				writer.WriteHeader(http.StatusNoContent)
@@ -184,7 +143,7 @@ func GetUserUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			}
 		} else {
 			var urlsList []UserURLs
-			for urlID, originalURL := range urls {
+			for urlID, originalURL := range urlsmap {
 				urlsList = append(urlsList, UserURLs{ShortURL: configuration.Cfg.BaseURLAddress + "/" + urlID, OriginalURL: originalURL})
 			}
 			resbyte, err := json.Marshal(urlsList)
@@ -224,76 +183,76 @@ func DecomprMiddlw(next http.Handler) http.Handler {
 // 	sign, err := r.Cookie("useridcookie")
 // 	// if err == nil {
 
-// 	// }
-// 	if err != nil {
-// 		userID, err = interf.AddNewUser()
-// 		if err != nil {
-// 			log.Println("Error while adding user", err)
-// 			return "", nil
-// 		}
-// 		signValue, err = NewUserSign(userID)
-// 		if err != nil {
-// 			log.Println("Error while creating of sign", err)
-// 			return "", nil
-// 		}
-// 		cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
-// 		return userID, cookie // added
-// 		// cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
-// 	}
-// 	signValue = sign.Value
-// 	userID, err = GetUserSign(signValue)
-// 	if err != nil {
-// 		log.Println("Error while checking of sign", err)
-// 		return "", nil
-// 	}
-// 	return userID, cookie
-// }
+//		// }
+//		if err != nil {
+//			userID, err = interf.AddNewUser()
+//			if err != nil {
+//				log.Println("Error while adding user", err)
+//				return "", nil
+//			}
+//			signValue, err = NewUserSign(userID)
+//			if err != nil {
+//				log.Println("Error while creating of sign", err)
+//				return "", nil
+//			}
+//			cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
+//			return userID, cookie // added
+//			// cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
+//		}
+//		signValue = sign.Value
+//		userID, err = GetUserSign(signValue)
+//		if err != nil {
+//			log.Println("Error while checking of sign", err)
+//			return "", nil
+//		}
+//		return userID, cookie
+//	}
+const userIDCookie = "useridcookie"
 
-func getUserIDCookie(interf repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
-	var userID string
-	var authOK bool
-	var signValue string
-	var cookie *http.Cookie
-
-	sign, err := r.Cookie("useridcookie")
+func getUserIDCookie(repo repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
+	var (
+		userID    string
+		checkAuth bool
+		signValue string
+		cookie    *http.Cookie
+	)
+	sign, err := r.Cookie(userIDCookie)
 	if err == nil {
 		signValue = sign.Value
-		userID, authOK, err = GetUserSign(signValue)
+		userID, checkAuth, err = GetUserSign(signValue)
 		if err != nil {
 			log.Println("Error while checking of sign", err)
-			return "0", nil, err
+			return "", nil, err
 		}
 	}
-	if err != nil || !authOK {
-		userID, err = interf.AddNewUser()
+	if err != nil || !checkAuth {
+		userID, err = repo.AddNewUser()
 		if err != nil {
 			log.Println("Error while adding user", err)
-			return "0", nil, err
+			return "", nil, err
 		}
 		signValue, err = NewUserSign(userID)
 		if err != nil {
 			log.Println("Error while creating of sign", err)
-			return "0", nil, err
+			return "", nil, err
 		}
-		cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
+		cookie = &http.Cookie{Name: userIDCookie, Value: signValue, MaxAge: 0}
 	}
 	return userID, cookie, nil
 }
 
-const UserIDCookie = "useridcookie"
-
 func getUserID(r *http.Request) (string, error) {
-	encodedCookie, err := r.Cookie(UserIDCookie)
+	encodedCookie, err := r.Cookie(userIDCookie)
 	if err != nil {
 		return "", err
 	}
-	userID, authOK, err := GetUserSign(encodedCookie.Value)
+	userID, checkAuth, err := GetUserSign(encodedCookie.Value)
 	if err != nil {
 		log.Println("Error while checking of sign", err)
 		return "", err
 	}
-	if !authOK {
-		return "", repository.ErrSignNotValid
+	if !checkAuth {
+		return "", repository.ErrIDNotValid
 	}
 	return userID, nil
 }

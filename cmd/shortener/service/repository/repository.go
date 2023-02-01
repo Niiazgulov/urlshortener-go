@@ -14,7 +14,7 @@ var (
 	ErrKeyNotFound     = errors.New("the key is not found")
 	ErrKeyNotSpecified = errors.New("the key is not specified")
 	ErrKeyNotExists    = errors.New("the key is not exists")
-	ErrSignNotValid    = errors.New("sign is not valid")
+	ErrIDNotValid      = errors.New("sign is not valid")
 )
 
 type JSONKeymap struct {
@@ -36,22 +36,17 @@ type AddorGetURL interface {
 
 type FileStorage struct {
 	FileJSON *os.File
-	// AllUrlsMap  map[string]string
-	// UserUrlsMap map[string][]int
-	NewMap    map[string]map[string]string
-	UserCount int
+	NewMap   map[string]map[string]string
 }
 
 func NewFileStorage(f *os.File) (AddorGetURL, error) {
 	m := make(map[string]map[string]string)
-	//uum := make(map[string][]int)
 	err := json.NewDecoder(f).Decode(&m)
 	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("unable to unmarshal file into map: %w", err)
 	}
 	if err == io.EOF {
 		m = make(map[string]map[string]string)
-		//uum = make(map[string][]int)
 	}
 	return &FileStorage{
 		FileJSON: f,
@@ -69,7 +64,6 @@ func (fs *FileStorage) AddURL(u URL, userID string) error {
 	if u.ShortURL == "" {
 		return ErrKeyNotSpecified
 	}
-	//fs.NewMap[userID] = make(map[string]string)
 	fs.NewMap[userID][u.ShortURL] = u.OriginalURL
 	jsonData, err := json.Marshal(fs.NewMap)
 	if err != nil {
@@ -105,11 +99,11 @@ func (fs *FileStorage) AddNewUser() (string, error) {
 }
 
 func (fs *FileStorage) FindAllUserUrls(userID string) (map[string]string, error) {
-	AllIdUrls, checktrue := fs.NewMap[userID]
-	if !checktrue {
+	AllIDUrls, ok := fs.NewMap[userID]
+	if !ok {
 		return nil, ErrKeyNotFound
 	}
-	return AllIdUrls, nil
+	return AllIDUrls, nil
 }
 
 const (
