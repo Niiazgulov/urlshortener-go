@@ -126,43 +126,77 @@ type UserURLs struct {
 	OriginalURL string `json:"original_url"`
 }
 
+// mfunc
+// func GetUserUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		userID, err := getUserID(r)
+// 		if err != nil {
+// 			w.WriteHeader(http.StatusNoContent)
+// 			return
+// 		}
+// 		urls, err := repo.FindAllUserUrls(userID)
+// 		// if err != nil {
+// 		// 	if err == repository.ErrKeyNotFound {
+// 		// 		w.WriteHeader(http.StatusNoContent)
+// 		// 	} else {
+// 		// 		log.Println("Error while getting URLs", err)
+// 		// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+// 		// 	}
+// 		// }
+// 		if err != nil {
+// 			http.Error(w, err.Error(), http.StatusInternalServerError) // 505
+// 			return
+// 		}
+// 		if len(urls) == 0 {
+// 			w.WriteHeader(http.StatusNoContent)
+// 			return
+// 		}
+// 		var urlsList []UserURLs
+// 		for urlID, originalURL := range urls {
+// 			urlsList = append(urlsList, UserURLs{ShortURL: configuration.Cfg.BaseURLAddress + "/" + urlID, OriginalURL: originalURL})
+// 		}
+// 		resbyte, err := json.Marshal(urlsList)
+// 		if err != nil {
+// 			log.Println("Error while serializing response", err)
+// 			http.Error(w, "Internal server error", http.StatusInternalServerError) //506
+// 			return
+// 		}
+// 		w.Header().Set("content-type", "application/json")
+// 		w.WriteHeader(http.StatusOK)
+// 		w.Write(resbyte)
+// 	}
+// }
+
 func GetUserUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(writer http.ResponseWriter, r *http.Request) {
 		userID, err := getUserID(r)
 		if err != nil {
-			w.WriteHeader(http.StatusNoContent)
+			writer.WriteHeader(http.StatusNoContent)
 			return
 		}
 		urls, err := repo.FindAllUserUrls(userID)
-		// if err != nil {
-		// 	if err == repository.ErrKeyNotFound {
-		// 		w.WriteHeader(http.StatusNoContent)
-		// 	} else {
-		// 		log.Println("Error while getting URLs", err)
-		// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		// 	}
-		// }
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError) // 505
-			return
+			if err == repository.ErrKeyNotFound {
+				writer.WriteHeader(http.StatusNoContent)
+			} else {
+				log.Println("Error while getting URLs", err)
+				http.Error(writer, "Internal server error", http.StatusInternalServerError)
+			}
+		} else {
+			var urlsList []UserURLs
+			for urlID, originalURL := range urls {
+				urlsList = append(urlsList, UserURLs{ShortURL: configuration.Cfg.BaseURLAddress + "/" + urlID, OriginalURL: originalURL})
+			}
+			resbyte, err := json.Marshal(urlsList)
+			if err != nil {
+				log.Println("Error while serializing response", err)
+				http.Error(writer, "Internal server error", http.StatusInternalServerError)
+				return
+			}
+			writer.Header().Set("content-type", "application/json")
+			writer.WriteHeader(http.StatusOK)
+			writer.Write(resbyte)
 		}
-		if len(urls) == 0 {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		var urlsList []UserURLs
-		for urlID, originalURL := range urls {
-			urlsList = append(urlsList, UserURLs{ShortURL: configuration.Cfg.BaseURLAddress + "/" + urlID, OriginalURL: originalURL})
-		}
-		respj, err := json.Marshal(urlsList)
-		if err != nil {
-			log.Println("Error while serializing response", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError) //506
-			return
-		}
-		w.Header().Set("content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(respj)
 	}
 }
 
