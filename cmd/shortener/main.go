@@ -42,7 +42,7 @@ func main() {
 		r.Get("/{id}", handlers.GetHandler(repo))
 		r.Post("/", handlers.PostHandler(repo, configuration.Cfg))
 		r.Post("/api/shorten", handlers.PostJSONHandler(repo, configuration.Cfg))
-		// r.Get("/api/user/urls", handlers.GetUserHandler(repo))
+		r.Get("/api/user/urls", handlers.GetUserUrlsHandler(repo))
 	})
 	log.Fatal(http.ListenAndServe(configuration.Cfg.ServerAddress, r))
 }

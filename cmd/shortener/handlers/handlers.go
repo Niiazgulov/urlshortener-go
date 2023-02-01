@@ -6,45 +6,28 @@ import (
 	"errors"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
 	"github.com/go-chi/chi/v5"
 )
 
-const (
-	symbols        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	ShortURLMaxLen = 7
-)
-
-func generateRandomString() string {
-	rand.Seed(time.Now().UnixNano())
-	result := make([]byte, 0, ShortURLMaxLen)
-	for i := 0; i < ShortURLMaxLen; i++ {
-		s := symbols[rand.Intn(len(symbols))]
-		result = append(result, s)
-	}
-	return string(result)
-}
-
 func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		shortID := generateRandomString()
+		shortID := repository.GenerateRandomString()
 		// Здесь мы проверяем что урл который мы сгенерировали отсутствует в базе
 		// если же он там есть, мы перегенерируем и так пока не получим уникальный
-		for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
-			if err != nil {
-				log.Printf("unable to get URL by short ID: %v", err)
-				http.Error(w, "unable to get url from DB", http.StatusInternalServerError)
-				return
-			}
-			shortID = generateRandomString()
-		}
+		// for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
+		// 	if err != nil {
+		// 		log.Printf("unable to get URL by short ID: %v", err)
+		// 		http.Error(w, "unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+		// 		return
+		// 	}
+		// 	shortID = repository.GenerateRandomString()
+		// }
 		shorturl := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		longURLByte, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -57,32 +40,22 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			http.Error(w, "unable to unescape query in input url", http.StatusBadRequest)
 			return
 		}
+		userID, tokenCookie, err := getUserIDCookie(repo, r)
+		if err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError) // 501
+			return
+		}
+		if tokenCookie != nil {
+			http.SetCookie(w, tokenCookie)
+		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
-		err = repo.AddURL(ourPoorURL)
+		err = repo.AddURL(ourPoorURL, userID)
 		if err != nil {
 			http.Error(w, "Status internal server error", http.StatusBadRequest)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl.String()))
-	}
-}
-
-func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		shortnew := chi.URLParam(r, "id")
-		originalURL, err := repo.GetURL(shortnew)
-		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) {
-			log.Printf("unable to get key from repo: %v", err)
-			http.Error(w, "unable to GET Original url", http.StatusInternalServerError)
-			return
-		}
-		if errors.Is(err, repository.ErrKeyNotExists) {
-			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
-			return
-		}
-		w.Header().Set("Location", originalURL)
-		w.WriteHeader(http.StatusTemporaryRedirect)
 	}
 }
 
@@ -98,17 +71,25 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			http.Error(w, "unable to QueryUnescape longURL", http.StatusBadRequest)
 			return
 		}
-		shortID := generateRandomString()
-		for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
-			if err != nil {
-				log.Printf("unable to get URL by short ID: %v", err)
-				http.Error(w, "unable to get url from DB", http.StatusInternalServerError)
-				return
-			}
-			shortID = generateRandomString()
+		shortID := repository.GenerateRandomString()
+		// for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
+		// 	if err != nil {
+		// 		log.Printf("unable to get URL by short ID: %v", err)
+		// 		http.Error(w, "unable to get url from DB", http.StatusInternalServerError) //502
+		// 		return
+		// 	}
+		// 	shortID = repository.GenerateRandomString()
+		// }
+		userID, tokenCookie, err := getUserIDCookie(repo, r)
+		if err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError) //503
+			return
+		}
+		if tokenCookie != nil {
+			http.SetCookie(w, tokenCookie)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
-		err = repo.AddURL(ourPoorURL)
+		err = repo.AddURL(ourPoorURL, userID)
 		if err != nil {
 			http.Error(w, "Status internal server error", http.StatusBadRequest)
 			return
@@ -121,12 +102,75 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 	}
 }
 
+func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		shortnew := chi.URLParam(r, "id")
+		originalURL, err := repo.GetURL(shortnew)
+		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) {
+			log.Printf("unable to get key from repo: %v", err)
+			http.Error(w, "unable to GET Original url", http.StatusInternalServerError) //504
+			return
+		}
+		if errors.Is(err, repository.ErrKeyNotExists) {
+			http.Error(w, "unable to GET Original url", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Location", originalURL)
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	}
+}
+
+type UserURLs struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
+func GetUserUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := getUserID(r)
+		if err != nil {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		urls, err := repo.FindAllUserUrls(userID)
+		// if err != nil {
+		// 	if err == repository.ErrKeyNotFound {
+		// 		w.WriteHeader(http.StatusNoContent)
+		// 	} else {
+		// 		log.Println("Error while getting URLs", err)
+		// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		// 	}
+		// }
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError) // 505
+			return
+		}
+		if len(urls) == 0 {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		var urlsList []UserURLs
+		for urlID, originalURL := range urls {
+			urlsList = append(urlsList, UserURLs{ShortURL: configuration.Cfg.BaseURLAddress + "/" + urlID, OriginalURL: originalURL})
+		}
+		respj, err := json.Marshal(urlsList)
+		if err != nil {
+			log.Println("Error while serializing response", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError) //506
+			return
+		}
+		w.Header().Set("content-type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(respj)
+	}
+}
+
 func DecomprMiddlw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gz, err := gzip.NewReader(r.Body)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, err.Error(), http.StatusInternalServerError) //507
 				return
 			}
 			r.Body = io.NopCloser(gz)
@@ -134,4 +178,87 @@ func DecomprMiddlw(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// func getUserIDCookie(interf repository.AddorGetURL, r *http.Request) (string, *http.Cookie) {
+// 	var (
+// 		userID    string
+// 		signValue string
+// 		cookie    *http.Cookie
+// 	)
+// 	sign, err := r.Cookie("useridcookie")
+// 	// if err == nil {
+
+// 	// }
+// 	if err != nil {
+// 		userID, err = interf.AddNewUser()
+// 		if err != nil {
+// 			log.Println("Error while adding user", err)
+// 			return "", nil
+// 		}
+// 		signValue, err = NewUserSign(userID)
+// 		if err != nil {
+// 			log.Println("Error while creating of sign", err)
+// 			return "", nil
+// 		}
+// 		cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
+// 		return userID, cookie // added
+// 		// cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
+// 	}
+// 	signValue = sign.Value
+// 	userID, err = GetUserSign(signValue)
+// 	if err != nil {
+// 		log.Println("Error while checking of sign", err)
+// 		return "", nil
+// 	}
+// 	return userID, cookie
+// }
+
+func getUserIDCookie(interf repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
+	var userID string
+	var authOK bool
+	var signValue string
+	var cookie *http.Cookie
+
+	sign, err := r.Cookie("token")
+	if err == nil {
+		signValue = sign.Value
+		userID, authOK, err = GetUserSign(signValue)
+		if err != nil {
+			log.Println("Error while checking of sign", err)
+			return "0", nil, err
+		}
+	}
+	if err != nil || !authOK {
+		userID, err = interf.AddNewUser()
+		if err != nil {
+			log.Println("Error while adding user", err)
+			return "0", nil, err
+		}
+		signValue, err = NewUserSign(userID)
+		if err != nil {
+			log.Println("Error while creating of sign", err)
+			return "0", nil, err
+		}
+		cookie = &http.Cookie{Name: "token", Value: signValue, MaxAge: 0}
+	}
+	return userID, cookie, nil
+}
+
+const UserIDCookie = "useridcookie"
+
+func getUserID(r *http.Request) (string, error) {
+	encodedCookie, err := r.Cookie(UserIDCookie)
+	if err != nil {
+		return "", err
+	}
+	userID, authOK, err := GetUserSign(encodedCookie.Value)
+	if err != nil {
+		log.Println("Error while checking of sign", err)
+		return "", err
+	}
+	if !authOK {
+		return "", repository.ErrSignNotValid
+	}
+	return userID, nil
 }
