@@ -20,14 +20,14 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		shortID := repository.GenerateRandomString()
 		// Здесь мы проверяем что урл который мы сгенерировали отсутствует в базе
 		// если же он там есть, мы перегенерируем и так пока не получим уникальный
-		// for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
-		// 	if err != nil {
-		// 		log.Printf("unable to get URL by short ID: %v", err)
-		// 		http.Error(w, "unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
-		// 		return
-		// 	}
-		// 	shortID = repository.GenerateRandomString()
-		// }
+		for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
+			if err != nil {
+				log.Printf("unable to get URL by short ID: %v", err)
+				http.Error(w, "unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+				return
+			}
+			shortID = repository.GenerateRandomString()
+		}
 		shorturl := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		longURLByte, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -72,14 +72,14 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			return
 		}
 		shortID := repository.GenerateRandomString()
-		// for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
-		// 	if err != nil {
-		// 		log.Printf("unable to get URL by short ID: %v", err)
-		// 		http.Error(w, "unable to get url from DB", http.StatusInternalServerError) //502
-		// 		return
-		// 	}
-		// 	shortID = repository.GenerateRandomString()
-		// }
+		for _, err := repo.GetURL(shortID); !errors.Is(err, repository.ErrKeyNotFound); _, err = repo.GetURL(shortID) {
+			if err != nil {
+				log.Printf("unable to get URL by short ID: %v", err)
+				http.Error(w, "unable to get url from DB", http.StatusInternalServerError) //502
+				return
+			}
+			shortID = repository.GenerateRandomString()
+		}
 		userID, tokenCookie, err := getUserIDCookie(repo, r)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError) //503
