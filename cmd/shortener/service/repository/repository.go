@@ -63,10 +63,13 @@ func (fs *FileStorage) AddURL(u URL, userID string) error {
 	if fs.NewMap == nil {
 		fs.NewMap = make(map[string]map[string]string)
 	}
+	if fs.NewMap[userID] == nil {
+		fs.NewMap[userID] = make(map[string]string)
+	}
 	if u.ShortURL == "" {
 		return ErrKeyNotSpecified
 	}
-	fs.NewMap[userID] = make(map[string]string)
+	//fs.NewMap[userID] = make(map[string]string)
 	fs.NewMap[userID][u.ShortURL] = u.OriginalURL
 	jsonData, err := json.Marshal(fs.NewMap)
 	if err != nil {
