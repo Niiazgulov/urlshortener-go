@@ -135,10 +135,10 @@ func GetPingHandler(Cfg configuration.Config) http.HandlerFunc {
 		defer db.Close()
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		if err = db.PingContext(ctx); err != nil {
+		err = db.PingContext(ctx)
+		if err != nil {
 			http.Error(w, "unable to open DataBase (GetPingHandler)", http.StatusBadRequest)
 			w.WriteHeader(http.StatusInternalServerError)
-			return
 		}
 		w.WriteHeader(http.StatusOK)
 	}
