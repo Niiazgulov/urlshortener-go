@@ -43,6 +43,7 @@ func main() {
 		r.Post("/", handlers.PostHandler(repo, configuration.Cfg))
 		r.Post("/api/shorten", handlers.PostJSONHandler(repo, configuration.Cfg))
 		r.Get("/api/user/urls", handlers.GetUserAllUrlsHandler(repo))
+		r.Get("/ping", handlers.GetPingHandler(configuration.Cfg))
 	})
 	log.Fatal(http.ListenAndServe(configuration.Cfg.ServerAddress, r))
 }

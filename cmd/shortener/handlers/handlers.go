@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"compress/gzip"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -9,10 +11,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
 	"github.com/go-chi/chi/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
@@ -40,7 +44,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			http.Error(w, "unable to unescape query in input url", http.StatusBadRequest)
 			return
 		}
-		userID, tokenCookie, err := getUserIDCookie(repo, r)
+		userID, tokenCookie, err := getUserIDfromCookie(repo, r)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError) // 501
 			return
@@ -80,7 +84,7 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			}
 			shortID = repository.GenerateRandomString()
 		}
-		userID, tokenCookie, err := getUserIDCookie(repo, r)
+		userID, tokenCookie, err := getUserIDfromCookie(repo, r)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError) //503
 			return
@@ -121,25 +125,44 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	}
 }
 
+func GetPingHandler(Cfg configuration.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		db, err := sql.Open("pgx", configuration.Cfg.DBPath)
+		if err != nil {
+			http.Error(w, "unable to open DataBase (GetPingHandler)", http.StatusBadRequest)
+			return
+		}
+		defer db.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		if err = db.PingContext(ctx); err != nil {
+			http.Error(w, "unable to open DataBase (GetPingHandler)", http.StatusBadRequest)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
 type UserURLs struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
 
 func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
-	return func(writer http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := getUserID(r)
 		if err != nil {
-			writer.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		urlsmap, err := repo.FindAllUserUrls(userID)
 		if err != nil {
 			if err == repository.ErrKeyNotFound {
-				writer.WriteHeader(http.StatusNoContent)
+				w.WriteHeader(http.StatusNoContent)
 			} else {
 				log.Println("Error while getting URLs", err)
-				http.Error(writer, "Internal server error", http.StatusInternalServerError)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
 			}
 		} else {
 			var urlsList []UserURLs
@@ -149,12 +172,12 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			resbyte, err := json.Marshal(urlsList)
 			if err != nil {
 				log.Println("Error while serializing response", err)
-				http.Error(writer, "Internal server error", http.StatusInternalServerError)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
 				return
 			}
-			writer.Header().Set("content-type", "application/json")
-			writer.WriteHeader(http.StatusOK)
-			writer.Write(resbyte)
+			w.Header().Set("content-type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(resbyte)
 		}
 	}
 }
@@ -174,72 +197,36 @@ func DecomprMiddlw(next http.Handler) http.Handler {
 	})
 }
 
-// func getUserIDCookie(interf repository.AddorGetURL, r *http.Request) (string, *http.Cookie) {
-// 	var (
-// 		userID    string
-// 		signValue string
-// 		cookie    *http.Cookie
-// 	)
-// 	sign, err := r.Cookie("useridcookie")
-// 	// if err == nil {
-
-//		// }
-//		if err != nil {
-//			userID, err = interf.AddNewUser()
-//			if err != nil {
-//				log.Println("Error while adding user", err)
-//				return "", nil
-//			}
-//			signValue, err = NewUserSign(userID)
-//			if err != nil {
-//				log.Println("Error while creating of sign", err)
-//				return "", nil
-//			}
-//			cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
-//			return userID, cookie // added
-//			// cookie = &http.Cookie{Name: "useridcookie", Value: signValue, MaxAge: 0}
-//		}
-//		signValue = sign.Value
-//		userID, err = GetUserSign(signValue)
-//		if err != nil {
-//			log.Println("Error while checking of sign", err)
-//			return "", nil
-//		}
-//		return userID, cookie
-//	}
 const userIDCookie = "useridcookie"
 
-func getUserIDCookie(repo repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
-	var (
-		userID    string
-		signValue string
-		cookie    *http.Cookie
-	)
+func getUserIDfromCookie(repo repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
+	var cookie *http.Cookie
 	sign, err := r.Cookie(userIDCookie)
 	if err != nil {
-		userID, err = repo.AddNewUser()
+		userID, err := repo.AddNewUser()
 		if err != nil {
 			log.Println("Error while adding user", err)
 			return "", nil, err
 		}
-		signValue, err = NewUserSign(userID)
+		signValue, err := NewUserSign(userID)
 		if err != nil {
-			log.Println("Error while creating of sign", err)
+			log.Println("Error of creating user sign", err)
 			return "", nil, err
 		}
-		cookie = &http.Cookie{Name: userIDCookie, Value: signValue, MaxAge: 0}
+		cookie := &http.Cookie{Name: userIDCookie, Value: signValue, MaxAge: 0}
 		return userID, cookie, nil // added
+	} else {
+		signValue := sign.Value
+		userID, _, err := GetUserSign(signValue)
+		if err != nil {
+			log.Println("Error when getting of user sign", err)
+			return "", nil, err
+		}
+		return userID, cookie, nil
 	}
-	signValue = sign.Value
-	userID, _, err = GetUserSign(signValue)
-	if err != nil {
-		log.Println("Error while checking of sign", err)
-		return "", nil, err
-	}
-	return userID, cookie, nil
 }
 
-// func getUserIDCookie(repo repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
+// func getUserIDfromCookie(repo repository.AddorGetURL, r *http.Request) (string, *http.Cookie, error) {
 // 	var (
 // 		userID    string
 // 		checkAuth bool
