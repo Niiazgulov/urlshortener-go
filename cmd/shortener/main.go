@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
@@ -23,11 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 	configuration.Cfg = *cfg
-	fileTemp, err := os.OpenFile(configuration.Cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
-	if err != nil {
-		log.Fatal(err)
-	}
-	repo, err := repository.NewFileStorage(fileTemp)
+	repo, err := repository.GetRepository(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}

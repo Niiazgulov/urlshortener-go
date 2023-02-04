@@ -13,6 +13,7 @@ type Config struct {
 	FilePath       string   `json:"file_storage_path"`
 	ConfigURL      *url.URL `json:"config_url"`
 	DBPath         string   `json:"database_path"`
+	FileTemp       *os.File
 }
 
 var Cfg Config
@@ -37,6 +38,10 @@ func NewConfig() (*Config, error) {
 	cfg.ConfigURL, err = url.Parse(cfg.BaseURLAddress)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse BaseURLAddress: %w", err)
+	}
+	cfg.FileTemp, err = os.OpenFile(Cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+	if err != nil {
+		return nil, fmt.Errorf("NewConfig: unable to open File: %w", err)
 	}
 	return cfg, nil
 }

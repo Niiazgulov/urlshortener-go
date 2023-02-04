@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-var key = []byte("encryption key")
+var superkey = []byte("fully protected encryption key")
 
 func NewUserSign(id string) (string, error) {
 	intID, err := strconv.Atoi(id)
@@ -18,7 +18,7 @@ func NewUserSign(id string) (string, error) {
 	}
 	uint32ID := uint32(intID)
 	databyte := binary.BigEndian.AppendUint32(nil, uint32ID)
-	hash := hmac.New(sha256.New, key)
+	hash := hmac.New(sha256.New, superkey)
 	hash.Write(databyte)
 	sign := hash.Sum(nil)
 	databyte = append(databyte, sign...)
@@ -33,7 +33,7 @@ func GetUserSign(s string) (string, bool, error) {
 	}
 	id := binary.BigEndian.Uint32(decodedbyte[:4])
 	userID := strconv.Itoa(int(id))
-	hash := hmac.New(sha256.New, key)
+	hash := hmac.New(sha256.New, superkey)
 	hash.Write(decodedbyte[:4])
 	usersign := hash.Sum(nil)
 	checkequal := hmac.Equal(usersign, decodedbyte[4:])
