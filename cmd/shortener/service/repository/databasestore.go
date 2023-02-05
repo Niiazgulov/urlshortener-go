@@ -12,7 +12,7 @@ type DataBaseStorage struct {
 	DataBase *sql.DB
 }
 
-func NewDataBaseStorqage(databasePath string) (*DataBaseStorage, error) {
+func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	db, err := sql.Open("pgx", databasePath)
 	if err != nil {
 		return nil, err
