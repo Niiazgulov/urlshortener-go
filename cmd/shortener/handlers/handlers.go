@@ -149,6 +149,7 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 		urlsmap, err := repo.FindAllUserUrls(r.Context(), userID)
 		if err != nil {
 			if err == repository.ErrKeyNotFound {
+				log.Println("Error while FindAllUserUrls", err)
 				w.WriteHeader(http.StatusNoContent)
 			} else {
 				log.Println("Error while getting URLs", err)
