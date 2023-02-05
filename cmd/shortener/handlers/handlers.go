@@ -137,15 +137,15 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-		userID, checkAuth, err := GetUserSign(encodedCookie.Value)
+		userID, _, err := GetUserSign(encodedCookie.Value)
 		if err != nil {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-		if !checkAuth {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
+		// if !checkAuth {
+		// 	w.WriteHeader(http.StatusNoContent)
+		// 	return
+		// }
 		urlsmap, err := repo.FindAllUserUrls(r.Context(), userID)
 		if err != nil {
 			if err == repository.ErrKeyNotFound {
