@@ -10,7 +10,7 @@ type DataBaseStorage struct {
 	DataBase *sql.DB
 }
 
-func NewDataBaseStorqage(databasePath string) (*DataBaseStorage, error) {
+func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	db, err := sql.Open("pgx", databasePath)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func NewDataBaseStorqage(databasePath string) (*DataBaseStorage, error) {
 	return &DataBaseStorage{DataBase: db}, nil
 }
 
-func (d DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error {
+func (d *DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error {
 	query := "INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)"
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
 	if err != nil {
@@ -37,7 +37,7 @@ func (d DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error
 	return nil
 }
 
-func (d DataBaseStorage) GetURL(ctx context.Context, id string) (string, error) {
+func (d *DataBaseStorage) GetURL(ctx context.Context, id string) (string, error) {
 	query := "SELECT original_url FROM urls WHERE id = $1"
 	row := d.DataBase.QueryRowContext(ctx, query, id)
 	var originalURL string
@@ -48,7 +48,7 @@ func (d DataBaseStorage) GetURL(ctx context.Context, id string) (string, error) 
 	return originalURL, nil
 }
 
-func (d DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
+func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
 	query := "SELECT original_url, id FROM urls WHERE user_id = $1"
 	rows, err := d.DataBase.QueryContext(ctx, query, userID)
 	if err != nil {
