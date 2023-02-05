@@ -24,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 	configuration.Cfg = *cfg
-	repo, err := repository.GetRepository(cfg)
+	repo, err := repository.GetRepository(configuration.Cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
