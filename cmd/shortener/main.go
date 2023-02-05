@@ -3,8 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
-
-	// "os"
+	"os"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
@@ -24,11 +23,29 @@ func main() {
 		log.Fatal(err)
 	}
 	configuration.Cfg = *cfg
-	repo, err := repository.GetRepository(cfg)
-	if err != nil {
-		log.Fatal(err)
+	var repo repository.AddorGetURL
+	if configuration.Cfg.DBPath != "" {
+		repo, err = repository.NewDataBaseStorqage(cfg.DBPath)
+		if err != nil {
+			log.Fatal("GetRepository: unable to make repo (NewDataBaseStorage): %w", err)
+		}
+	} else {
+		f, err := os.OpenFile(cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+		if err != nil {
+			log.Fatal("GetRepository: unable to open file: %w", err)
+		}
+		repo, err = repository.NewFileStorage(f)
+		if err != nil {
+			log.Fatal("GetRepository: unable to make repo (NewFileStorage): %w", err)
+		}
 	}
-	defer repo.Close()
+	//test 1
+	// repo, err := repository.GetRepository(cfg)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer repo.Close()
+	//test 2
 	// fileTemp, err := os.OpenFile(configuration.Cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
 	// if err != nil {
 	// 	log.Fatal(err)
