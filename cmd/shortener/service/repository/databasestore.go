@@ -17,9 +17,9 @@ func NewDataBaseStorqage(databasePath string) (*DataBaseStorage, error) {
 	}
 	_, err = db.Exec(`
 		"CREATE TABLE IF NOT EXISTS urls (
-			user_id text not null, 
 			original_url text unique not null, 
-			id text unique not null)"
+			id text unique not null,
+			user_id text not null)"
 		`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute a query to DB: %w", err)

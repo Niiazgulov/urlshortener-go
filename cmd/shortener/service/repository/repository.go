@@ -37,7 +37,7 @@ type URL struct {
 
 func GetRepository(cfg *configuration.Config) (AddorGetURL, error) {
 	if cfg.DBPath != "" {
-		repo, err := NewDataBaseStorage(cfg.DBPath)
+		repo, err := NewDataBaseStorqage(cfg.DBPath)
 		if err != nil {
 			return nil, fmt.Errorf("GetRepository: unable to make repo (NewDataBaseStorage): %w", err)
 		}
