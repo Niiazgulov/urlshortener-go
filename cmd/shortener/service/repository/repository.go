@@ -35,7 +35,7 @@ type URL struct {
 	OriginalURL string
 }
 
-func GetRepository(cfg configuration.Config) (AddorGetURL, error) {
+func GetRepository(cfg *configuration.Config) (AddorGetURL, error) {
 	if cfg.DBPath != "" {
 		repo, err := NewDataBaseStorqage(cfg.DBPath)
 		if err != nil {
