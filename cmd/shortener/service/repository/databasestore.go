@@ -27,7 +27,7 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	return &DataBaseStorage{DataBase: db}, nil
 }
 
-func (d *DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error {
+func (d *DataBaseStorage) AddURL(_ context.Context, u URL, userID string) error {
 	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
 	if err != nil {
@@ -42,9 +42,8 @@ func (d *DataBaseStorage) GetURL(ctx context.Context, id string) (string, error)
 	query := `SELECT original_url FROM urls WHERE id = $1`
 	row := d.DataBase.QueryRowContext(ctx, query, id)
 	var originalURL string
-	err := row.Scan(&originalURL)
-	if err != nil {
-		return "", fmt.Errorf("unable to Scan originalURL from DB (GetURL): %w", err)
+	if err := row.Scan(&originalURL); err != nil {
+		return "", fmt.Errorf("OMG, I unable to Scan originalURL from DB (GetURL): %w", err)
 	}
 	return originalURL, nil
 }
