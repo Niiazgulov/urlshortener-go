@@ -28,12 +28,13 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 }
 
 func (d *DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error {
+	// query := "INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)"
+	// _, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
+	// if err != nil {
+	// 	return fmt.Errorf("unable to AddURL to DB: %w", err)
+	// }
 	query := "INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)"
-	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
-	if err != nil {
-		return fmt.Errorf("unable to AddURL to DB: %w", err)
-	}
-	// d.DataBase.QueryRowContext(ctx, addURLcommand, u.OriginalURL, u.ShortURL, userID)
+	d.DataBase.QueryRowContext(ctx, query, u.OriginalURL, u.ShortURL, userID)
 	return nil
 }
 
