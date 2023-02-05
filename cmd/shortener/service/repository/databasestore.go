@@ -27,7 +27,7 @@ func NewDataBaseStorage(databasePath string) (*DataBaseStorage, error) {
 }
 
 func (d DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error {
-	addURLcommand := "INSERT INTO urls (user_id, id, original_url) VALUES ($1, $2, $3)"
+	addURLcommand := "INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)"
 	d.DataBase.QueryRowContext(ctx, addURLcommand, userID, u.ShortURL, u.OriginalURL)
 	return nil
 }
@@ -44,7 +44,7 @@ func (d DataBaseStorage) GetURL(ctx context.Context, id string) (string, error) 
 }
 
 func (d DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
-	selectUrls := "SELECT id, original_url FROM urls WHERE user_id = $1"
+	selectUrls := "SELECT  original_url, id FROM urls WHERE user_id = $1"
 	rows, err := d.DataBase.QueryContext(ctx, selectUrls, userID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to return urls from DB (FindAllUserUrls): %w", err)
@@ -54,7 +54,7 @@ func (d DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (ma
 	for rows.Next() {
 		var id string
 		var originalURL string
-		err = rows.Scan(&id, &originalURL)
+		err = rows.Scan(&originalURL, &id)
 		if err != nil {
 			return nil, err
 		}
