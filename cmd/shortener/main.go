@@ -26,12 +26,12 @@ func main() {
 	configuration.Cfg = *cfg
 	var repo repository.AddorGetURL
 	if configuration.Cfg.DBPath != "" {
-		repo, err = repository.NewDataBaseStorqage(cfg.DBPath)
+		repo, err = repository.NewDataBaseStorqage(configuration.Cfg.DBPath)
 		if err != nil {
 			log.Fatal("GetRepository: unable to make repo (NewDataBaseStorage): %w", err)
 		}
 	} else {
-		f, err := os.OpenFile(cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+		f, err := os.OpenFile(configuration.Cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
 		if err != nil {
 			log.Fatal("GetRepository: unable to open file: %w", err)
 		}
