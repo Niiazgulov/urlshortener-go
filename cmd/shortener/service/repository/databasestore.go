@@ -17,9 +17,9 @@ func NewDataBaseStorqage(databasePath string) (*DataBaseStorage, error) {
 	}
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS urls (
-			original_url text unique not null, 
-			id text unique not null,
-			user_id text not null)
+			original_url TEXT NOT NULL, 
+			id TEXT UNIQUE NOT NULL,
+			user_id TEXT UNIQUE NOT NULL)
 		`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute a query to DB: %w", err)
@@ -34,9 +34,9 @@ func (d DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error
 }
 
 func (d DataBaseStorage) GetURL(ctx context.Context, id string) (string, error) {
-	var originalURL string
 	getURLcommand := "SELECT original_url FROM urls WHERE id = $1"
 	row := d.DataBase.QueryRowContext(ctx, getURLcommand, id)
+	var originalURL string
 	err := row.Scan(&originalURL)
 	if err != nil {
 		return "", fmt.Errorf("unable to Scan originalURL from DB (GetURL): %w", err)
@@ -45,8 +45,8 @@ func (d DataBaseStorage) GetURL(ctx context.Context, id string) (string, error) 
 }
 
 func (d DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
-	selectUrls := "SELECT original_url, id FROM urls WHERE user_id = $1"
-	rows, err := d.DataBase.QueryContext(ctx, selectUrls, userID)
+	selectUrlscommand := "SELECT original_url, id FROM urls WHERE user_id = $1"
+	rows, err := d.DataBase.QueryContext(ctx, selectUrlscommand, userID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to return urls from DB (FindAllUserUrls): %w", err)
 	}
