@@ -28,7 +28,7 @@ func NewDataBaseStorage(databasePath string) (*DataBaseStorage, error) {
 
 func (d DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error {
 	addURLcommand := "INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)"
-	d.DataBase.QueryRowContext(ctx, addURLcommand, userID, u.ShortURL, u.OriginalURL)
+	d.DataBase.QueryRowContext(ctx, addURLcommand, u.OriginalURL, u.ShortURL, userID)
 	return nil
 }
 
