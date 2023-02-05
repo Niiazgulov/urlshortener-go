@@ -43,6 +43,9 @@ func (d *DataBaseStorage) GetURL(ctx context.Context, id string) (string, error)
 	row := d.DataBase.QueryRowContext(ctx, query, id)
 	var originalURL string
 	if err := row.Scan(&originalURL); err != nil {
+		if err == sql.ErrNoRows {
+			return "", ErrKeyNotFound
+		}
 		return "", fmt.Errorf("OMG, I unable to Scan originalURL from DB (GetURL): %w", err)
 	}
 	return originalURL, nil
