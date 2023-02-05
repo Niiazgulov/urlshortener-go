@@ -45,7 +45,7 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
-	// defer repo.Close()
+	defer repo.Close()
 	//test 2
 	// fileTemp, err := os.OpenFile(configuration.Cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
 	// if err != nil {
