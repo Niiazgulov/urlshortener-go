@@ -17,7 +17,7 @@ func NewDataBaseStorage(databasePath string) (*DataBaseStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	urlsSQLTable := "CREATE TABLE IF NOT EXISTS urls (id PRIMARY KEY, original_url varchar, user_id integer)"
+	urlsSQLTable := "CREATE TABLE IF NOT EXISTS urls (id serial PRIMARY KEY, original_url varchar, user_id integer)"
 	_, err = db.Exec(urlsSQLTable)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute a query to DB: %w", err)
