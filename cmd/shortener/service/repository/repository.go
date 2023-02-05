@@ -19,7 +19,7 @@ var (
 )
 
 type AddorGetURL interface {
-	AddURL(ctx context.Context, u URL, userID string) error
+	AddURL(u URL, userID string) error
 	GetURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
 	Close()

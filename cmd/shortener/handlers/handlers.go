@@ -53,7 +53,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			http.SetCookie(w, token)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
-		err = repo.AddURL(r.Context(), ourPoorURL, userID)
+		err = repo.AddURL(ourPoorURL, userID)
 		if err != nil {
 			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
 			return
@@ -93,7 +93,7 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			http.SetCookie(w, token)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
-		err = repo.AddURL(r.Context(), ourPoorURL, userID)
+		err = repo.AddURL(ourPoorURL, userID)
 		if err != nil {
 			http.Error(w, "PostJSONHandler: Status internal server error", http.StatusBadRequest)
 			return

@@ -28,7 +28,7 @@ func NewFileStorage(f *os.File) (AddorGetURL, error) {
 	}, nil
 }
 
-func (fs *FileStorage) AddURL(_ context.Context, u URL, userID string) error {
+func (fs *FileStorage) AddURL(u URL, userID string) error {
 	if fs.NewMap == nil {
 		fs.NewMap = make(map[string]map[string]string)
 	}
