@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
@@ -21,6 +22,7 @@ type AddorGetURL interface {
 	AddURL(ctx context.Context, u URL, userID string) error
 	GetURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
+	Close()
 }
 
 type JSONKeymap struct {
@@ -41,7 +43,11 @@ func GetRepository(cfg *configuration.Config) (AddorGetURL, error) {
 		}
 		return repo, nil
 	} else {
-		repo, err := NewFileStorage(cfg.FileTemp)
+		f, err := os.OpenFile(cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+		if err != nil {
+			return nil, fmt.Errorf("GetRepository: unable to open file: %w", err)
+		}
+		repo, err := NewFileStorage(f)
 		if err != nil {
 			return nil, fmt.Errorf("GetRepository: unable to make repo (NewFileStorage): %w", err)
 		}

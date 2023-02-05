@@ -10,6 +10,8 @@ type DataBaseStorage struct {
 	DataBase *sql.DB
 }
 
+var _ AddorGetURL = (*DataBaseStorage)(nil)
+
 func NewDataBaseStorage(databasePath string) (*DataBaseStorage, error) {
 	db, err := sql.Open("pgx", databasePath)
 	if err != nil {
@@ -62,4 +64,8 @@ func (d DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (ma
 		return nil, err
 	}
 	return AllIDUrls, nil
+}
+
+func (d DataBaseStorage) Close() {
+	d.DataBase.Close()
 }

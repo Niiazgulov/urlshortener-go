@@ -69,3 +69,7 @@ func (fs *FileStorage) FindAllUserUrls(_ context.Context, userID string) (map[st
 	}
 	return AllIDUrls, nil
 }
+
+func (fs *FileStorage) Close() {
+	fs.FileJSON.Close()
+}
