@@ -18,7 +18,7 @@ func NewDataBaseStorage(databasePath string) (*DataBaseStorage, error) {
 		return nil, err
 	}
 	// urlsSQLTable := "CREATE TABLE IF NOT EXISTS urls (id PRIMARY KEY, original_url varchar, user_id varchar)"
-	urlsSQLTable := "CREATE TABLE IF NOT EXISTS urls (user_id varchar(36) not null, original_url varchar unique not null, id PRIMARY KEY varchar(12) unique not null)"
+	urlsSQLTable := "CREATE TABLE IF NOT EXISTS urls (user_id PRIMARY KEY varchar(36) not null, id varchar(12) unique not null), original_url varchar unique not null,"
 	_, err = db.Exec(urlsSQLTable)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute a query to DB: %w", err)
@@ -44,7 +44,7 @@ func (d DataBaseStorage) GetURL(ctx context.Context, id string) (string, error) 
 }
 
 func (d DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
-	selectUrls := "SELECT  original_url, id FROM urls WHERE user_id = $1"
+	selectUrls := "SELECT original_url, id FROM urls WHERE user_id = $1"
 	rows, err := d.DataBase.QueryContext(ctx, selectUrls, userID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to return urls from DB (FindAllUserUrls): %w", err)
