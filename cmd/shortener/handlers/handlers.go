@@ -181,7 +181,7 @@ func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.
 		db := dbstorage.DataBase
 		var err error
 		if db == nil {
-			db, err = sql.Open("postgres", configuration.Cfg.DBPath)
+			db, err = sql.Open("pgx", configuration.Cfg.DBPath)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
