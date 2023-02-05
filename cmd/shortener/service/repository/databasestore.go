@@ -17,7 +17,8 @@ func NewDataBaseStorage(databasePath string) (*DataBaseStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	urlsSQLTable := "CREATE TABLE IF NOT EXISTS urls (id PRIMARY KEY, original_url varchar, user_id varchar)"
+	// urlsSQLTable := "CREATE TABLE IF NOT EXISTS urls (id PRIMARY KEY, original_url varchar, user_id varchar)"
+	urlsSQLTable := "CREATE TABLE IF NOT EXISTS urls user_id varchar(36) not null, original_url varchar unique not null, id varchar(12) unique not null"
 	_, err = db.Exec(urlsSQLTable)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute a query to DB: %w", err)
@@ -26,8 +27,8 @@ func NewDataBaseStorage(databasePath string) (*DataBaseStorage, error) {
 }
 
 func (d DataBaseStorage) AddURL(ctx context.Context, u URL, userID string) error {
-	addURLcommand := "INSERT INTO urls (original_url, user_id) VALUES ($1, $2)"
-	d.DataBase.QueryRowContext(ctx, addURLcommand, u.OriginalURL, userID)
+	addURLcommand := "INSERT INTO urls (user_id, id, original_url) VALUES ($1, $2, $3)"
+	d.DataBase.QueryRowContext(ctx, addURLcommand, userID, u.ShortURL, u.OriginalURL)
 	return nil
 }
 
