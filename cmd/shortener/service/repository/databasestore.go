@@ -11,7 +11,7 @@ type DataBaseStorage struct {
 }
 
 func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
-	db, err := sql.Open("pgx", databasePath)
+	db, err := sql.Open("postgres", databasePath)
 	if err != nil {
 		return nil, err
 	}

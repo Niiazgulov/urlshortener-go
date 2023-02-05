@@ -3,10 +3,12 @@ package handlers
 import (
 	"compress/gzip"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
 	"log"
+
 	"net/http"
 	"net/url"
 	"strings"
@@ -175,14 +177,19 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 
 func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dbstorage, ok := repo.(*repository.DataBaseStorage)
-		if !ok {
-			http.Error(w, "Failed to check database connection", http.StatusInternalServerError)
-		}
+		dbstorage := repo.(*repository.DataBaseStorage)
 		db := dbstorage.DataBase
+		var err error
+		if db == nil {
+			db, err = sql.Open("postgres", configuration.Cfg.DBPath)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			defer db.Close()
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		err := db.PingContext(ctx)
+		err = db.PingContext(ctx)
 		if err != nil {
 			http.Error(w, "bad connection to DataBase (GetPingHandler)", http.StatusInternalServerError)
 			w.WriteHeader(http.StatusInternalServerError)
