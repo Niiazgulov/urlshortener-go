@@ -202,11 +202,21 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 		if token != nil {
 			http.SetCookie(w, token)
 		}
-		var originalurls []repository.Correlation
-		if err := json.NewDecoder(r.Body).Decode(&originalurls); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		request, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "PostBatchHandler: can't read r.Body", http.StatusBadRequest)
 			return
 		}
+		var originalurls []repository.Correlation
+		err = json.Unmarshal(request, &originalurls)
+		if err != nil {
+			http.Error(w, "PostBatchHandler: can't Unmarshal request", http.StatusBadRequest)
+			return
+		}
+		// if err := json.NewDecoder(r.Body).Decode(&originalurls); err != nil {
+		// 	http.Error(w, err.Error(), http.StatusBadRequest)
+		// 	return
+		// }
 		result, err := repo.BatchURL(r.Context(), userID, originalurls)
 		if err != nil {
 			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusGatewayTimeout) //504
