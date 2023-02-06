@@ -36,7 +36,7 @@ const (
 	Symbols        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	IntSymbols     = "0123456789"
 	ShortURLMaxLen = 7
-	BaseTest       = "http://localhost:8080/"
+	BaseTest       = "http://localhost:8080"
 )
 
 func GenerateRandomString() string {
