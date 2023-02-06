@@ -114,7 +114,7 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)
-		fs.NewMap[batch.UserID][shorturl] = batch.OriginalURL
+		fs.NewMap[batch.UserID][shortID] = batch.OriginalURL
 	}
 	jsonData, err := json.Marshal(fs.NewMap)
 	if err != nil {
