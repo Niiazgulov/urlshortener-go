@@ -107,15 +107,14 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
 		shorturl := BaseTest + shortID
-		batch.ShortURL = shorturl
 		newurl := Correlation{
-			ShortURL:      batch.ShortURL,
+			ShortURL:      shorturl,
 			UserID:        userID,
 			OriginalURL:   batch.OriginalURL,
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)
-		fs.NewMap[batch.UserID][batch.ShortURL] = batch.OriginalURL
+		fs.NewMap[batch.UserID][shorturl] = batch.OriginalURL
 	}
 	jsonData, err := json.Marshal(fs.NewMap)
 	if err != nil {

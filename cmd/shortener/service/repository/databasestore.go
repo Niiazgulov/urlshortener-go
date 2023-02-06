@@ -101,16 +101,15 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
 		shorturl := BaseTest + shortID
-		batch.ShortURL = shorturl
 		newurl := Correlation{
-			ShortURL:      batch.ShortURL,
+			ShortURL:      shorturl,
 			UserID:        userID,
 			OriginalURL:   batch.OriginalURL,
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)
 		query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
-		_, err := d.DataBase.Exec(query, batch.OriginalURL, batch.ShortURL, userID)
+		_, err := d.DataBase.Exec(query, batch.OriginalURL, shorturl, userID)
 		if err != nil {
 			return nil, fmt.Errorf("BatchURL: unable to AddURL to DB: %w", err)
 		}
