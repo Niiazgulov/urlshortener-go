@@ -18,7 +18,7 @@ type AddorGetURL interface {
 	AddURL(u URL, userID string) error
 	GetURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
-	BatchURL(ctx context.Context, userID string, originalurls []Correlation) ([]Correlation, error)
+	BatchURL(ctx context.Context, userID string, originalurls []Correlation) ([]ShortCorrelation, error)
 	Close()
 }
 

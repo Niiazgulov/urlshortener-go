@@ -75,7 +75,7 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 	return AllIDUrls, nil
 }
 
-func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
+func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]ShortCorrelation, error) {
 	// var shortID string
 	// urlslen := len(urls)
 	// if urlslen == 0 {
@@ -97,14 +97,14 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 	// 		return nil, fmt.Errorf("BatchURL: unable to AddURL to DB: %w", err)
 	// 	}
 	// }
-	var newurls []Correlation
+	var newurls []ShortCorrelation
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
 		shorturl := BaseTest + shortID
-		newurl := Correlation{
-			ShortURL:      shorturl,
-			UserID:        userID,
-			OriginalURL:   batch.OriginalURL,
+		newurl := ShortCorrelation{
+			ShortURL: shorturl,
+			// UserID:        userID,
+			// OriginalURL:   batch.OriginalURL,
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)

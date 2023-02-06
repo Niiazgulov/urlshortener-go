@@ -76,7 +76,7 @@ func (fs *FileStorage) Close() {
 	fs.FileJSON.Close()
 }
 
-func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
+func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]ShortCorrelation, error) {
 	// var shortID string
 	// urlslen := len(urls)
 	// newurls := make([]Correlation, urlslen)
@@ -103,14 +103,14 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 	// 	}
 	// 	fs.NewMap[newurls[i].UserID][newurls[i].ShortURL] = newurls[i].OriginalURL
 	// }
-	var newurls []Correlation
+	var newurls []ShortCorrelation
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
 		shorturl := BaseTest + shortID
-		newurl := Correlation{
-			ShortURL:      shorturl,
-			UserID:        userID,
-			OriginalURL:   batch.OriginalURL,
+		newurl := ShortCorrelation{
+			ShortURL: shorturl,
+			// UserID:        userID,
+			// OriginalURL:   batch.OriginalURL,
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)

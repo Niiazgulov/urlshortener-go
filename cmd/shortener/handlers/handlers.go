@@ -194,17 +194,14 @@ func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.
 
 func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, token, err := UserIDfromCookie(repo, r)
-		if err != nil {
-			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusLoopDetected) // 508
-			return
-		}
-		if token != nil {
-			http.SetCookie(w, token)
-		}
 		request, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "PostBatchHandler: can't read r.Body", http.StatusBadRequest)
+			return
+		}
+		userID, token, err := UserIDfromCookie(repo, r)
+		if err != nil {
+			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusLoopDetected) // 508
 			return
 		}
 		var originalurls []repository.Correlation
@@ -222,17 +219,20 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusGatewayTimeout) //504
 			return
 		}
-		shorturls := make([]repository.ShortCorrelation, len(result))
-		for i, batch := range result {
-			shorturls[i] = repository.ShortCorrelation{
-				CorrelationID: batch.CorrelationID,
-				ShortURL:      batch.ShortURL,
-			}
-		}
-		response, err := json.Marshal(shorturls)
+		// shorturls := make([]repository.ShortCorrelation, len(result))
+		// for i, batch := range result {
+		// 	shorturls[i] = repository.ShortCorrelation{
+		// 		CorrelationID: batch.CorrelationID,
+		// 		ShortURL:      batch.ShortURL,
+		// 	}
+		// }
+		response, err := json.Marshal(result)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if token != nil {
+			http.SetCookie(w, token)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
