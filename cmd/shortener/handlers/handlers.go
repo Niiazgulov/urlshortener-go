@@ -7,7 +7,6 @@ import (
 	"errors"
 	"io"
 	"log"
-
 	"net/http"
 	"net/url"
 	"strings"
@@ -204,13 +203,16 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			http.SetCookie(w, token)
 		}
 		var originalurls []repository.Correlation
-		if err := json.NewDecoder(r.Body).Decode(&originalurls); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+		json.NewDecoder(r.Body).Decode(&originalurls)
+		mistake, err := json.Marshal(originalurls)
+		mis := string(mistake)
+		// if err := json.NewDecoder(r.Body).Decode(&originalurls); err != nil {
+		// 	http.Error(w, err.Error(), http.StatusBadRequest)
+		// 	return
+		// }
 		result, err := repo.BatchURL(r.Context(), userID, originalurls)
 		if err != nil {
-			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusGatewayTimeout) //504
+			http.Error(w, mis, http.StatusGatewayTimeout) //504
 			return
 		}
 		shorturls := make([]repository.ShortCorrelation, len(result))
