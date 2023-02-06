@@ -119,10 +119,10 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 		if err != nil {
 			return nil, fmt.Errorf("BatchURL: unable to marshal internal file storage map: %w", err)
 		}
-		if err := os.Truncate("OurURL.json", 0); err != nil {
-			return nil, fmt.Errorf("BatchURL: unable to Truncate file: %w", err)
-		}
 		fs.FileJSON.Write(jsonData)
+	}
+	if err := os.Truncate("OurURL.json", 0); err != nil {
+		return nil, fmt.Errorf("BatchURL: unable to Truncate file: %w", err)
 	}
 	return urls, nil
 }
