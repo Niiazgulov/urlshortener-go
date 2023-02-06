@@ -118,11 +118,11 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 	}
 	for _, batch := range urls {
 		fs.NewMap[batch.UserID][batch.ShortURL] = batch.OriginalURL
-		jsonData, err := json.Marshal(fs.NewMap)
-		if err != nil {
-			return nil, fmt.Errorf("BatchURL: unable to marshal internal file storage map: %w", err)
-		}
-		fs.FileJSON.Write(jsonData)
 	}
+	jsonData, err := json.Marshal(fs.NewMap)
+	if err != nil {
+		return nil, fmt.Errorf("BatchURL: unable to marshal internal file storage map: %w", err)
+	}
+	fs.FileJSON.Write(jsonData)
 	return urls, nil
 }
