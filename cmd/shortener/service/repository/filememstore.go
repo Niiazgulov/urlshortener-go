@@ -77,17 +77,6 @@ func (fs *FileStorage) Close() {
 }
 
 func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]ShortCorrelation, error) {
-	// var shortID string
-	// urlslen := len(urls)
-	// newurls := make([]Correlation, urlslen)
-	// for i := range urls {
-	// 	shortID = GenerateRandomString()
-	// 	shorturl := BaseTest + shortID
-	// 	newurls[i].ShortURL = shorturl
-	// 	newurls[i].UserID = userID
-	// 	newurls[i].OriginalURL = urls[i].OriginalURL
-	// 	newurls[i].CorrelationID = urls[i].CorrelationID
-	// }
 	if fs.NewMap == nil {
 		fs.NewMap = make(map[string]map[string]string)
 	}
@@ -97,20 +86,12 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 	if err := os.Truncate("OurURL.json", 0); err != nil {
 		return nil, fmt.Errorf("BatchURL: unable to Truncate file: %w", err)
 	}
-	// for i := range newurls {
-	// 	if newurls[i].ShortURL == "" {
-	// 		return nil, ErrKeyNotSpecified
-	// 	}
-	// 	fs.NewMap[newurls[i].UserID][newurls[i].ShortURL] = newurls[i].OriginalURL
-	// }
 	var newurls []ShortCorrelation
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
 		shorturl := BaseTest + shortID
 		newurl := ShortCorrelation{
-			ShortURL: shorturl,
-			// UserID:        userID,
-			// OriginalURL:   batch.OriginalURL,
+			ShortURL:      shorturl,
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)

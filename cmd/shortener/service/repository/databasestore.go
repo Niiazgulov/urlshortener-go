@@ -43,9 +43,9 @@ func (d *DataBaseStorage) GetURL(ctx context.Context, id string) (string, error)
 	row := d.DataBase.QueryRowContext(ctx, query, id)
 	var originalURL string
 	if err := row.Scan(&originalURL); err != nil {
-		// if err == sql.ErrNoRows {
-		// 	return "", ErrKeyNotFound
-		// }
+		if err == sql.ErrNoRows {
+			return "", ErrKeyNotFound
+		}
 		return "", fmt.Errorf("OMG, I unable to Scan originalURL from DB (GetURL): %w", err)
 	}
 	return originalURL, nil
@@ -76,35 +76,12 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 }
 
 func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]ShortCorrelation, error) {
-	// var shortID string
-	// urlslen := len(urls)
-	// if urlslen == 0 {
-	// 	return nil, fmt.Errorf("BatchURL: urls len is 0")
-	// }
-	// newurls := make([]Correlation, urlslen)
-	// for i := range urls {
-	// 	shortID = GenerateRandomString()
-	// 	shorturl := BaseTest + shortID
-	// 	newurls[i].ShortURL = shorturl
-	// 	newurls[i].UserID = userID
-	// 	newurls[i].OriginalURL = urls[i].OriginalURL
-	// 	newurls[i].CorrelationID = urls[i].CorrelationID
-	// }
-	// for _, batch := range newurls {
-	// 	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
-	// 	_, err := d.DataBase.Exec(query, batch.OriginalURL, batch.ShortURL, batch.UserID)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("BatchURL: unable to AddURL to DB: %w", err)
-	// 	}
-	// }
 	var newurls []ShortCorrelation
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
 		shorturl := BaseTest + shortID
 		newurl := ShortCorrelation{
-			ShortURL: shorturl,
-			// UserID:        userID,
-			// OriginalURL:   batch.OriginalURL,
+			ShortURL:      shorturl,
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)
@@ -115,28 +92,6 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 		}
 	}
 	return newurls, nil
-
-	// tx, err := d.DataBase.Begin()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer tx.Rollback()
-	// query, err := d.DataBase.Prepare("INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("BatchURL DataBase.Prepare error: %w", err)
-	// }
-	// txStmt := tx.StmtContext(ctx, query)
-	// for _, batch := range newurls {
-	// 	_, err := txStmt.Exec(ctx, batch.OriginalURL, batch.ShortURL, batch.UserID)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("BatchURL add error: %w", err)
-	// 	}
-	// }
-	// err = tx.Commit()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("BatchURL commit error: %w", err)
-	// }
-	// return newurls, nil
 }
 
 func (d DataBaseStorage) Close() {

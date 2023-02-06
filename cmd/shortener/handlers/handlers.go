@@ -23,18 +23,18 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		shortID := repository.GenerateRandomString()
 		// Здесь мы проверяем что урл который мы сгенерировали отсутствует в базе
 		// если же он там есть, мы перегенерируем и так пока не получим уникальный
-		// for {
-		// 	if _, err := repo.GetURL(r.Context(), shortID); err != nil {
-		// 		if err == repository.ErrKeyNotFound {
-		// 			break
-		// 		} else {
-		// 			log.Printf("PostHandler: unable to get URL by short ID: %v", err)
-		// 			http.Error(w, "PostHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
-		// 			return
-		// 		}
-		// 	}
-		// 	shortID = repository.GenerateRandomString()
-		// }
+		for {
+			if _, err := repo.GetURL(r.Context(), shortID); err != nil {
+				if err == repository.ErrKeyNotFound {
+					break
+				} else {
+					log.Printf("PostHandler: unable to get URL by short ID: %v", err)
+					http.Error(w, "PostHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+					return
+				}
+			}
+			shortID = repository.GenerateRandomString()
+		}
 		shorturl := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		longURLByte, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -79,18 +79,18 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			return
 		}
 		shortID := repository.GenerateRandomString()
-		// for {
-		// 	if _, err := repo.GetURL(r.Context(), shortID); err != nil {
-		// 		if err == repository.ErrKeyNotFound {
-		// 			break
-		// 		} else {
-		// 			log.Printf("PostJSONHandler: unable to get URL by short ID: %v", err)
-		// 			http.Error(w, "PostJSONHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
-		// 			return
-		// 		}
-		// 	}
-		// 	shortID = repository.GenerateRandomString()
-		// }
+		for {
+			if _, err := repo.GetURL(r.Context(), shortID); err != nil {
+				if err == repository.ErrKeyNotFound {
+					break
+				} else {
+					log.Printf("PostJSONHandler: unable to get URL by short ID: %v", err)
+					http.Error(w, "PostJSONHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+					return
+				}
+			}
+			shortID = repository.GenerateRandomString()
+		}
 		userID, token, err := UserIDfromCookie(repo, r)
 		if err != nil {
 			http.Error(w, "PostJSONHandler: Status internal server error", http.StatusInternalServerError) //503
@@ -201,7 +201,7 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 		}
 		userID, token, err := UserIDfromCookie(repo, r)
 		if err != nil {
-			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusLoopDetected) // 508
+			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusInternalServerError)
 			return
 		}
 		var originalurls []repository.Correlation
@@ -210,22 +210,11 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			http.Error(w, "PostBatchHandler: can't Unmarshal request", http.StatusBadRequest)
 			return
 		}
-		// if err := json.NewDecoder(r.Body).Decode(&originalurls); err != nil {
-		// 	http.Error(w, err.Error(), http.StatusBadRequest)
-		// 	return
-		// }
 		result, err := repo.BatchURL(r.Context(), userID, originalurls)
 		if err != nil {
-			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusGatewayTimeout) //504
+			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusInternalServerError)
 			return
 		}
-		// shorturls := make([]repository.ShortCorrelation, len(result))
-		// for i, batch := range result {
-		// 	shorturls[i] = repository.ShortCorrelation{
-		// 		CorrelationID: batch.CorrelationID,
-		// 		ShortURL:      batch.ShortURL,
-		// 	}
-		// }
 		response, err := json.Marshal(result)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
