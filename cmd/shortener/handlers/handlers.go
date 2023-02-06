@@ -23,18 +23,18 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		shortID := repository.GenerateRandomString()
 		// Здесь мы проверяем что урл который мы сгенерировали отсутствует в базе
 		// если же он там есть, мы перегенерируем и так пока не получим уникальный
-		for {
-			if _, err := repo.GetURL(r.Context(), shortID); err != nil {
-				if err == repository.ErrKeyNotFound {
-					break
-				} else {
-					log.Printf("PostHandler: unable to get URL by short ID: %v", err)
-					http.Error(w, "PostHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
-					return
-				}
-			}
-			shortID = repository.GenerateRandomString()
-		}
+		// for {
+		// 	if _, err := repo.GetURL(r.Context(), shortID); err != nil {
+		// 		if err == repository.ErrKeyNotFound {
+		// 			break
+		// 		} else {
+		// 			log.Printf("PostHandler: unable to get URL by short ID: %v", err)
+		// 			http.Error(w, "PostHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+		// 			return
+		// 		}
+		// 	}
+		// 	shortID = repository.GenerateRandomString()
+		// }
 		shorturl := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		longURLByte, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -79,18 +79,18 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			return
 		}
 		shortID := repository.GenerateRandomString()
-		for {
-			if _, err := repo.GetURL(r.Context(), shortID); err != nil {
-				if err == repository.ErrKeyNotFound {
-					break
-				} else {
-					log.Printf("PostJSONHandler: unable to get URL by short ID: %v", err)
-					http.Error(w, "PostJSONHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
-					return
-				}
-			}
-			shortID = repository.GenerateRandomString()
-		}
+		// for {
+		// 	if _, err := repo.GetURL(r.Context(), shortID); err != nil {
+		// 		if err == repository.ErrKeyNotFound {
+		// 			break
+		// 		} else {
+		// 			log.Printf("PostJSONHandler: unable to get URL by short ID: %v", err)
+		// 			http.Error(w, "PostJSONHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+		// 			return
+		// 		}
+		// 	}
+		// 	shortID = repository.GenerateRandomString()
+		// }
 		userID, token, err := UserIDfromCookie(repo, r)
 		if err != nil {
 			http.Error(w, "PostJSONHandler: Status internal server error", http.StatusInternalServerError) //503
@@ -118,7 +118,7 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 		shortnew := chi.URLParam(r, "id")
 		originalURL, err := repo.GetURL(r.Context(), shortnew)
 		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) {
-			log.Printf("GetHandler: unable to get key from repo: %v", err)
+			log.Printf("GetHandler: unable to Get key from repo: %v", err)
 			http.Error(w, "GetHandler: unable to GET Original url", http.StatusInternalServerError) //504
 			return
 		}
