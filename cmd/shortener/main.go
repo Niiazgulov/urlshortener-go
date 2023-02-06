@@ -54,7 +54,7 @@ func main() {
 		r.Get("/ping", handlers.GetPingHandler(repo, configuration.Cfg))
 		r.Post("/", handlers.PostHandler(repo, configuration.Cfg))
 		r.Post("/api/shorten", handlers.PostJSONHandler(repo, configuration.Cfg))
-		r.Post("/api/shorten/batch", handlers.PostBatchHandler(repo, configuration.Cfg))
+		r.Post("/api/shorten/batch", handlers.PostBatchHandler(repo))
 	})
 	log.Fatal(http.ListenAndServe(configuration.Cfg.ServerAddress, r))
 }

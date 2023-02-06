@@ -193,7 +193,7 @@ func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.
 	}
 }
 
-func PostBatchHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
+func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, token, err := UserIDfromCookie(repo, r)
 		if err != nil {
@@ -227,7 +227,7 @@ func PostBatchHandler(repo repository.AddorGetURL, Cfg configuration.Config) htt
 		}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(&response)
+		w.Write(response)
 	}
 }
 
