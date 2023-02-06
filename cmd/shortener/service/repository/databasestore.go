@@ -77,7 +77,8 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 
 func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
 	var shortID string
-	var newurls []Correlation
+	urlslen := len(urls)
+	newurls := make([]Correlation, urlslen)
 	for i := range urls {
 		shortID = GenerateRandomString()
 		newurls[i].ShortURL = shortID

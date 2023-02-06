@@ -78,7 +78,8 @@ func (fs *FileStorage) Close() {
 
 func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
 	var shortID string
-	var newurls []Correlation
+	urlslen := len(urls)
+	newurls := make([]Correlation, urlslen)
 	for i := range urls {
 		shortID = GenerateRandomString()
 		newurls[i].ShortURL = shortID
