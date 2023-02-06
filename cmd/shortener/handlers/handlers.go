@@ -197,7 +197,7 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, token, err := UserIDfromCookie(repo, r)
 		if err != nil {
-			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusInternalServerError)
+			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusLoopDetected) // 508
 			return
 		}
 		if token != nil {
@@ -210,7 +210,7 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 		}
 		result, err := repo.BatchURL(r.Context(), userID, originalurls)
 		if err != nil {
-			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusInternalServerError)
+			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusGatewayTimeout) //504
 			return
 		}
 		shorturls := make([]repository.ShortCorrelation, len(result))
