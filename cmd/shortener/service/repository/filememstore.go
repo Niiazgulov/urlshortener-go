@@ -113,6 +113,9 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 	if fs.NewMap[userID] == nil {
 		fs.NewMap[userID] = make(map[string]string)
 	}
+	if err := os.Truncate("OurURL.json", 0); err != nil {
+		return nil, fmt.Errorf("BatchURL: unable to Truncate file: %w", err)
+	}
 	for _, batch := range urls {
 		fs.NewMap[batch.UserID][batch.ShortURL] = batch.OriginalURL
 		jsonData, err := json.Marshal(fs.NewMap)
@@ -120,9 +123,6 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 			return nil, fmt.Errorf("BatchURL: unable to marshal internal file storage map: %w", err)
 		}
 		fs.FileJSON.Write(jsonData)
-	}
-	if err := os.Truncate("OurURL.json", 0); err != nil {
-		return nil, fmt.Errorf("BatchURL: unable to Truncate file: %w", err)
 	}
 	return urls, nil
 }
