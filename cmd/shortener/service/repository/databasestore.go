@@ -78,6 +78,9 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
 	var shortID string
 	urlslen := len(urls)
+	if urlslen == 0 {
+		return nil, fmt.Errorf("BatchURL: urls len is 0")
+	}
 	newurls := make([]Correlation, urlslen)
 	for i := range urls {
 		shortID = GenerateRandomString()
@@ -87,26 +90,33 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 		newurls[i].OriginalURL = urls[i].OriginalURL
 		newurls[i].CorrelationID = urls[i].CorrelationID
 	}
-	tx, err := d.DataBase.Begin()
-	if err != nil {
-		return nil, err
-	}
-	// defer tx.Rollback()
-	query, err := d.DataBase.Prepare("INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)")
-	if err != nil {
-		return nil, fmt.Errorf("BatchURL DataBase.Prepare error: %w", err)
-	}
-	txStmt := tx.StmtContext(ctx, query)
 	for _, batch := range newurls {
-		_, err := txStmt.Exec(ctx, batch.OriginalURL, batch.ShortURL, batch.UserID)
+		query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
+		_, err := d.DataBase.Exec(query, batch.OriginalURL, batch.ShortURL, batch.UserID)
 		if err != nil {
-			return nil, fmt.Errorf("BatchURL add error: %w", err)
+			return nil, fmt.Errorf("BatchURL: unable to AddURL to DB: %w", err)
 		}
 	}
-	err = tx.Commit()
-	if err != nil {
-		return nil, fmt.Errorf("BatchURL commit error: %w", err)
-	}
+	// tx, err := d.DataBase.Begin()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer tx.Rollback()
+	// query, err := d.DataBase.Prepare("INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("BatchURL DataBase.Prepare error: %w", err)
+	// }
+	// txStmt := tx.StmtContext(ctx, query)
+	// for _, batch := range newurls {
+	// 	_, err := txStmt.Exec(ctx, batch.OriginalURL, batch.ShortURL, batch.UserID)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("BatchURL add error: %w", err)
+	// 	}
+	// }
+	// err = tx.Commit()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("BatchURL commit error: %w", err)
+	// }
 	return newurls, nil
 }
 
