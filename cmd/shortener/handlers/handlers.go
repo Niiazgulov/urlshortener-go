@@ -259,7 +259,7 @@ func UserIDfromCookie(repo repository.AddorGetURL, r *http.Request) (string, *ht
 			return "", nil, err
 		}
 		cookie := &http.Cookie{Name: userIDCookie, Value: signValue, MaxAge: 0}
-		return userID, cookie, nil // added
+		return userID, cookie, nil
 	} else {
 		signValue := sign.Value
 		userID, checkAuth, err := GetUserSign(signValue)

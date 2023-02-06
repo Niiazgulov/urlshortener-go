@@ -102,10 +102,14 @@ func (fs *FileStorage) Close() {
 // }
 
 func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
+	var shortID string
+	var newurls []Correlation
 	for i := range urls {
-		shortID := GenerateRandomString()
-		urls[i].ShortURL = shortID
-		urls[i].UserID = userID
+		shortID = GenerateRandomString()
+		newurls[i].ShortURL = shortID
+		newurls[i].UserID = userID
+		newurls[i].OriginalURL = urls[i].OriginalURL
+		newurls[i].CorrelationID = urls[i].CorrelationID
 	}
 	if fs.NewMap == nil {
 		fs.NewMap = make(map[string]map[string]string)
@@ -116,7 +120,7 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 	if err := os.Truncate("OurURL.json", 0); err != nil {
 		return nil, fmt.Errorf("BatchURL: unable to Truncate file: %w", err)
 	}
-	for _, batch := range urls {
+	for _, batch := range newurls {
 		fs.NewMap[batch.UserID][batch.ShortURL] = batch.OriginalURL
 	}
 	jsonData, err := json.Marshal(fs.NewMap)
@@ -124,5 +128,5 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 		return nil, fmt.Errorf("BatchURL: unable to marshal internal file storage map: %w", err)
 	}
 	fs.FileJSON.Write(jsonData)
-	return urls, nil
+	return newurls, nil
 }
