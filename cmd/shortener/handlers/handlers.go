@@ -85,8 +85,8 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 				if err == repository.ErrKeyNotFound {
 					break
 				} else {
-					log.Printf("PostHandler: unable to get URL by short ID: %v", err)
-					http.Error(w, "PostHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+					log.Printf("PostJSONHandler: unable to get URL by short ID: %v", err)
+					http.Error(w, "PostJSONHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
 					return
 				}
 			}
@@ -107,10 +107,10 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			return
 		}
 		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID)
-		resobj := repository.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
+		response := repository.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(&resobj)
+		json.NewEncoder(w).Encode(&response)
 	}
 }
 
@@ -150,10 +150,6 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-		// if !checkAuth {
-		// 	w.WriteHeader(http.StatusNoContent)
-		// 	return
-		// }
 		urlsmap, err := repo.FindAllUserUrls(r.Context(), userID)
 		if err != nil {
 			if err == repository.ErrKeyNotFound {
@@ -169,7 +165,7 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 				shorturl := configuration.Cfg.ConfigURL.JoinPath(short)
 				urlsList = append(urlsList, UserURLs{ShortURL: shorturl.String(), OriginalURL: originalURL})
 			}
-			resbyte, err := json.Marshal(urlsList)
+			response, err := json.Marshal(urlsList)
 			if err != nil {
 				log.Println("GetUserAllUrlsHandler: Error while serializing response", err)
 				http.Error(w, "Status internal server error", http.StatusInternalServerError)
@@ -177,7 +173,7 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			}
 			w.Header().Set("content-type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write(resbyte)
+			w.Write(response)
 		}
 	}
 }
@@ -186,14 +182,6 @@ func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbstorage := repo.(*repository.DataBaseStorage)
 		db := dbstorage.DataBase
-		// var err error
-		// if db == nil {
-		// 	db, err = sql.Open("pgx", configuration.Cfg.DBPath)
-		// 	if err != nil {
-		// 		w.WriteHeader(http.StatusInternalServerError)
-		// 	}
-		// 	defer db.Close()
-		// }
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 		err := db.PingContext(ctx)
@@ -202,6 +190,44 @@ func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func PostBatchHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, token, err := UserIDfromCookie(repo, r)
+		if err != nil {
+			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusInternalServerError)
+			return
+		}
+		if token != nil {
+			http.SetCookie(w, token)
+		}
+		var originalurls []repository.Correlation
+		if err := json.NewDecoder(r.Body).Decode(&originalurls); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		result, err := repo.BatchURL(r.Context(), userID, originalurls)
+		if err != nil {
+			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusInternalServerError)
+			return
+		}
+		shorturls := make([]repository.ShortCorrelation, len(result))
+		for i, batch := range result {
+			shorturls[i] = repository.ShortCorrelation{
+				CorrelationID: batch.CorrelationID,
+				ShortURL:      batch.ShortURL,
+			}
+		}
+		response, err := json.Marshal(shorturls)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(&response)
 	}
 }
 

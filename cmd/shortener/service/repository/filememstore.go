@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 type FileStorage struct {
 	FileJSON *os.File
 	NewMap   map[string]map[string]string
+	Writer   *bufio.Writer
 }
 
 func NewFileStorage(f *os.File) (AddorGetURL, error) {
@@ -72,4 +74,28 @@ func (fs *FileStorage) FindAllUserUrls(_ context.Context, userID string) (map[st
 
 func (fs *FileStorage) Close() {
 	fs.FileJSON.Close()
+}
+
+func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
+	for i := range urls {
+		shortID := GenerateRandomString()
+		urls[i].ShortURL = shortID
+		urls[i].UserID = userID
+	}
+	for _, batch := range urls {
+		data, err := json.Marshal(batch)
+		if err != nil {
+			return nil, err
+		}
+		_, err = fs.Writer.Write(data)
+		if err != nil {
+			return nil, err
+		}
+		fs.Writer.WriteByte('\n')
+		if err != nil {
+			return nil, err
+		}
+	}
+	fs.Writer.Flush()
+	return urls, nil
 }

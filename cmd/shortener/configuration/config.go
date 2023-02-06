@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type Config struct {
@@ -37,6 +35,7 @@ func NewConfig() (*Config, error) {
 	cfg.ServerAddress = pickFirstNonEmpty(cfg.ServerAddress, os.Getenv("SERVER_ADDRESS"), ":8080")
 	cfg.FilePath = pickFirstNonEmpty(cfg.FilePath, os.Getenv("FILE_STORAGE_PATH"), "OurURL.json")
 	cfg.DBPath = pickFirstNonEmpty(cfg.DBPath, os.Getenv("DATABASE_DSN"))
+	// cfg.DBPath = pickFirstNonEmpty(cfg.DBPath, os.Getenv("DATABASE_DSN"), connectionString)
 	var err error
 	cfg.ConfigURL, err = url.Parse(cfg.BaseURLAddress)
 	if err != nil {

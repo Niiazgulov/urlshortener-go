@@ -75,6 +75,35 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 	return AllIDUrls, nil
 }
 
+func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
+	for i := range urls {
+		shortID := GenerateRandomString()
+		urls[i].ShortURL = shortID
+		urls[i].UserID = userID
+	}
+	tx, err := d.DataBase.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	query, err := d.DataBase.Prepare("INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)")
+	if err != nil {
+		return nil, fmt.Errorf("BatchURL DataBase.Prepare error: %w", err)
+	}
+	txStmt := tx.StmtContext(ctx, query)
+	for _, v := range urls {
+		_, err := txStmt.ExecContext(ctx, v.OriginalURL, v.ShortURL, v.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("BatchURL add error: %w", err)
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("BatchURL commit error: %w", err)
+	}
+	return urls, nil
+}
+
 func (d DataBaseStorage) Close() {
 	d.DataBase.Close()
 }

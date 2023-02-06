@@ -3,12 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
-
-	// "fmt"
 	"math/rand"
-	// "os"
 	"time"
-	// "github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 )
 
 var (
@@ -22,6 +18,7 @@ type AddorGetURL interface {
 	AddURL(u URL, userID string) error
 	GetURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
+	BatchURL(ctx context.Context, userID string, originalurls []Correlation) ([]Correlation, error)
 	Close()
 }
 
@@ -34,26 +31,6 @@ type URL struct {
 	ShortURL    string
 	OriginalURL string
 }
-
-// func GetRepository(cfg *configuration.Config) (AddorGetURL, error) {
-// 	if cfg.DBPath != "" {
-// 		repo, err := NewDataBaseStorqage(cfg.DBPath)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("GetRepository: unable to make repo (NewDataBaseStorage): %w", err)
-// 		}
-// 		return repo, nil
-// 	} else {
-// 		f, err := os.OpenFile(cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("GetRepository: unable to open file: %w", err)
-// 		}
-// 		repo, err := NewFileStorage(f)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("GetRepository: unable to make repo (NewFileStorage): %w", err)
-// 		}
-// 		return repo, nil
-// 	}
-// }
 
 const (
 	Symbols        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -79,4 +56,16 @@ func GenerateRandomIntString() string {
 		result = append(result, s)
 	}
 	return string(result)
+}
+
+type ShortCorrelation struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}
+
+type Correlation struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
+	ShortURL      string `json:"short_url"`
+	UserID        string `json:"user_id"`
 }
