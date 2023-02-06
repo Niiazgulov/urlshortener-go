@@ -76,26 +76,53 @@ func (fs *FileStorage) Close() {
 	fs.FileJSON.Close()
 }
 
+// func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
+// 	for i := range urls {
+// 		shortID := GenerateRandomString()
+// 		urls[i].ShortURL = shortID
+// 		urls[i].UserID = userID
+// 	}
+// 	for _, batch := range urls {
+
+// 		data, err := json.Marshal(batch)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		_, err = fs.Writer.Write(data)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		fs.Writer.WriteByte('\n')
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+// 	fs.Writer.Flush()
+// 	return urls, nil
+// }
+
 func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
 	for i := range urls {
 		shortID := GenerateRandomString()
 		urls[i].ShortURL = shortID
 		urls[i].UserID = userID
 	}
-	for _, batch := range urls {
-		data, err := json.Marshal(batch)
-		if err != nil {
-			return nil, err
-		}
-		_, err = fs.Writer.Write(data)
-		if err != nil {
-			return nil, err
-		}
-		fs.Writer.WriteByte('\n')
-		if err != nil {
-			return nil, err
-		}
+	if fs.NewMap == nil {
+		fs.NewMap = make(map[string]map[string]string)
 	}
-	fs.Writer.Flush()
+	if fs.NewMap[userID] == nil {
+		fs.NewMap[userID] = make(map[string]string)
+	}
+	for _, batch := range urls {
+		fs.NewMap[batch.UserID][batch.ShortURL] = batch.OriginalURL
+		jsonData, err := json.Marshal(fs.NewMap)
+		if err != nil {
+			return nil, fmt.Errorf("BatchURL: unable to marshal internal file storage map: %w", err)
+		}
+		if err := os.Truncate("OurURL.json", 0); err != nil {
+			return nil, fmt.Errorf("BatchURL: unable to Truncate file: %w", err)
+		}
+		fs.FileJSON.Write(jsonData)
+	}
 	return urls, nil
 }
