@@ -76,27 +76,40 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 }
 
 func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]Correlation, error) {
-	var shortID string
-	urlslen := len(urls)
-	if urlslen == 0 {
-		return nil, fmt.Errorf("BatchURL: urls len is 0")
-	}
-	newurls := make([]Correlation, urlslen)
-	for i := range urls {
-		shortID = GenerateRandomString()
+	// var shortID string
+	// urlslen := len(urls)
+	// if urlslen == 0 {
+	// 	return nil, fmt.Errorf("BatchURL: urls len is 0")
+	// }
+	// newurls := make([]Correlation, urlslen)
+	// for i := range urls {
+	// 	shortID = GenerateRandomString()
+	// 	shorturl := BaseTest + shortID
+	// 	newurls[i].ShortURL = shorturl
+	// 	newurls[i].UserID = userID
+	// 	newurls[i].OriginalURL = urls[i].OriginalURL
+	// 	newurls[i].CorrelationID = urls[i].CorrelationID
+	// }
+	// for _, batch := range newurls {
+	// 	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
+	// 	_, err := d.DataBase.Exec(query, batch.OriginalURL, batch.ShortURL, batch.UserID)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("BatchURL: unable to AddURL to DB: %w", err)
+	// 	}
+	// }
+
+	for _, batch := range urls {
+		shortID := GenerateRandomString()
 		shorturl := BaseTest + shortID
-		newurls[i].ShortURL = shorturl
-		newurls[i].UserID = userID
-		newurls[i].OriginalURL = urls[i].OriginalURL
-		newurls[i].CorrelationID = urls[i].CorrelationID
-	}
-	for _, batch := range newurls {
+		batch.ShortURL = shorturl
 		query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
-		_, err := d.DataBase.Exec(query, batch.OriginalURL, batch.ShortURL, batch.UserID)
+		_, err := d.DataBase.Exec(query, batch.OriginalURL, batch.ShortURL, userID)
 		if err != nil {
 			return nil, fmt.Errorf("BatchURL: unable to AddURL to DB: %w", err)
 		}
 	}
+	return urls, nil
+
 	// tx, err := d.DataBase.Begin()
 	// if err != nil {
 	// 	return nil, err
@@ -117,7 +130,7 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 	// if err != nil {
 	// 	return nil, fmt.Errorf("BatchURL commit error: %w", err)
 	// }
-	return newurls, nil
+	// return newurls, nil
 }
 
 func (d DataBaseStorage) Close() {
