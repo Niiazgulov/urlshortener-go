@@ -89,14 +89,14 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	// defer tx.Rollback()
 	query, err := d.DataBase.Prepare("INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)")
 	if err != nil {
 		return nil, fmt.Errorf("BatchURL DataBase.Prepare error: %w", err)
 	}
 	txStmt := tx.StmtContext(ctx, query)
-	for _, v := range newurls {
-		_, err := txStmt.ExecContext(ctx, v.OriginalURL, v.ShortURL, v.UserID)
+	for _, batch := range newurls {
+		_, err := txStmt.Exec(ctx, batch.OriginalURL, batch.ShortURL, batch.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("BatchURL add error: %w", err)
 		}
