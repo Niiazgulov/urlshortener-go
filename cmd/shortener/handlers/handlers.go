@@ -56,24 +56,26 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			http.SetCookie(w, token)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
+		handlerstatus := http.StatusCreated
 		err = repo.AddURL(ourPoorURL, userID)
 		if err != nil {
 			if errors.Is(err, repository.ErrURLexists) {
-				oldshorturl, err := repo.GetShortURL(r.Context(), longURL)
+				shortId, err := repo.GetShortURL(r.Context(), longURL)
 				if err != nil {
 					log.Printf("PostHandler: unable to get shortURL by longURL: %v", err)
 					http.Error(w, "PostHandler: unable to get shortURL from DB", http.StatusInternalServerError)
 					return
 				}
-				w.WriteHeader(http.StatusConflict)
-				w.Write([]byte(oldshorturl))
+				handlerstatus = http.StatusConflict
+				shorturl = configuration.Cfg.ConfigURL.JoinPath(shortId)
 			} else {
 				http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
 				return
 			}
 		}
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(shorturl.String()))
+		response := shorturl.String()
+		w.WriteHeader(handlerstatus)
+		w.Write([]byte(response))
 	}
 }
 
@@ -111,18 +113,16 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			http.SetCookie(w, token)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
+		handlerstatus := http.StatusCreated
 		err = repo.AddURL(ourPoorURL, userID)
 		if errors.Is(err, repository.ErrURLexists) {
-			oldshorturl, err := repo.GetShortURL(r.Context(), longURL)
-			response := repository.JSONKeymap{ShortJSON: oldshorturl, LongJSON: longURL}
+			shortID, err = repo.GetShortURL(r.Context(), longURL)
 			if err != nil {
 				log.Printf("PostJSONHandler: unable to get shortURL by longURL: %v", err)
 				http.Error(w, "PostJSONHandler: unable to get shortURL from DB", http.StatusInternalServerError)
 				return
 			}
-			w.Header().Add("Content-Type", "application/json")
-			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(&response)
+			handlerstatus = http.StatusConflict
 		} else {
 			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
 			return
@@ -130,7 +130,7 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		response := repository.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
 		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(handlerstatus)
 		json.NewEncoder(w).Encode(&response)
 	}
 }
