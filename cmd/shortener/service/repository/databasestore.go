@@ -28,13 +28,8 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 			user_id TEXT)
 		`)
 	if err != nil {
-		return nil, fmt.Errorf("unable to execute a query to DB: %w", err)
+		return nil, fmt.Errorf("unable to CREATE TABLE in DB: %w", err)
 	}
-	// _, err = db.Exec(`CREATE UNIQUE INDEX original_unique_idx ON urls (original_url)`)
-	// _, err = db.Exec(`ALTER TABLE urls ADD UNIQUE (original_url)`)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("unable to create unique index to URL in DB: %w", err)
-	// }
 	return &DataBaseStorage{DataBase: db}, nil
 }
 
@@ -44,16 +39,6 @@ func (d *DataBaseStorage) AddURL(u URL, userID string) error {
 	if err != nil && strings.Contains(err.Error(), pgerrcode.UniqueViolation) {
 		return ErrURLexists
 	}
-	// if err != nil {
-	// 	var pgerr *pgx.PgError
-	// 	if errors.As(err, &pgerr) {
-	// 		if pgerr.Code == pgerrcode.UniqueViolation {
-	// 			return ErrURLexists
-	// 		}
-	// 	} else {
-	// 		return fmt.Errorf("AddURL: unable to add URL to DB: %w", err)
-	// 	}
-	// }
 	return nil
 }
 
