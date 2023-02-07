@@ -58,20 +58,19 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
 		handlerstatus := http.StatusCreated
 		err = repo.AddURL(ourPoorURL, userID)
-		if err != nil {
-			if errors.Is(err, repository.ErrURLexists) {
-				shortId, err := repo.GetShortURL(r.Context(), longURL)
-				if err != nil {
-					log.Printf("PostHandler: unable to get shortURL by longURL: %v", err)
-					http.Error(w, "PostHandler: unable to get shortURL from DB", http.StatusInternalServerError)
-					return
-				}
-				handlerstatus = http.StatusConflict
-				shorturl = configuration.Cfg.ConfigURL.JoinPath(shortId)
-			} else {
-				http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
+		if err != nil && !errors.Is(err, repository.ErrURLexists) {
+			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
+			return
+		}
+		if errors.Is(err, repository.ErrURLexists) {
+			shortId, err := repo.GetShortURL(r.Context(), longURL)
+			if err != nil {
+				log.Printf("PostHandler: unable to get shortURL by longURL: %v", err)
+				http.Error(w, "PostHandler: unable to get shortURL from DB", http.StatusInternalServerError)
 				return
 			}
+			handlerstatus = http.StatusConflict
+			shorturl = configuration.Cfg.ConfigURL.JoinPath(shortId)
 		}
 		response := shorturl.String()
 		w.WriteHeader(handlerstatus)
@@ -115,6 +114,10 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
 		handlerstatus := http.StatusCreated
 		err = repo.AddURL(ourPoorURL, userID)
+		if err != nil && !errors.Is(err, repository.ErrURLexists) {
+			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
+			return
+		}
 		if errors.Is(err, repository.ErrURLexists) {
 			shortID, err = repo.GetShortURL(r.Context(), longURL)
 			if err != nil {
@@ -123,9 +126,6 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 				return
 			}
 			handlerstatus = http.StatusConflict
-		} else {
-			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
-			return
 		}
 		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		response := repository.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
