@@ -29,7 +29,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 					break
 				} else {
 					log.Printf("PostHandler: unable to get URL by short ID: %v", err)
-					http.Error(w, "PostHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+					http.Error(w, "PostHandler: unable to get url from DB", http.StatusInternalServerError)
 					return
 				}
 			}
@@ -49,7 +49,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		}
 		userID, token, err := UserIDfromCookie(repo, r)
 		if err != nil {
-			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError) // 501
+			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError)
 			return
 		}
 		if token != nil {
@@ -59,7 +59,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		handlerstatus := http.StatusCreated
 		err = repo.AddURL(ourPoorURL, userID)
 		if err != nil && !errors.Is(err, repository.ErrURLexists) {
-			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
+			http.Error(w, "PostHandler: Status finternal server error", http.StatusBadRequest)
 			return
 		}
 		if errors.Is(err, repository.ErrURLexists) {
@@ -141,7 +141,7 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 		originalURL, err := repo.GetOriginalURL(r.Context(), shortnew)
 		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) {
 			log.Printf("GetHandler: unable to Get key from repo: %v", err)
-			http.Error(w, "GetHandler: unable to GET Original url", http.StatusInternalServerError) //504
+			http.Error(w, "GetHandler: unable to GET Original url", http.StatusInternalServerError)
 			return
 		}
 		if errors.Is(err, repository.ErrKeyNotExists) {
@@ -256,7 +256,7 @@ func DecomprMiddlw(next http.Handler) http.Handler {
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gz, err := gzip.NewReader(r.Body)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError) //507
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			r.Body = io.NopCloser(gz)

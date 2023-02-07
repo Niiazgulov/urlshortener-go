@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx"
@@ -22,34 +23,37 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	}
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS urls (
-			original_url VARCHAR, 
-			id VARCHAR,
-			user_id VARCHAR)
+			original_url TEXT UNIQUE, 
+			id TEXT,
+			user_id TEXT)
 		`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute a query to DB: %w", err)
 	}
 	// _, err = db.Exec(`CREATE UNIQUE INDEX original_unique_idx ON urls (original_url)`)
-	_, err = db.Exec(`ALTER TABLE urls ADD UNIQUE (original_url)`)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create unique index to URL in DB: %w", err)
-	}
+	// _, err = db.Exec(`ALTER TABLE urls ADD UNIQUE (original_url)`)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("unable to create unique index to URL in DB: %w", err)
+	// }
 	return &DataBaseStorage{DataBase: db}, nil
 }
 
 func (d *DataBaseStorage) AddURL(u URL, userID string) error {
 	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
-	if err != nil {
-		var pgerr *pgx.PgError
-		if errors.As(err, &pgerr) {
-			if pgerr.Code == pgerrcode.UniqueViolation {
-				return ErrURLexists
-			}
-		} else {
-			return fmt.Errorf("AddURL: unable to add URL to DB: %w", err)
-		}
+	if err != nil && strings.Contains(err.Error(), pgerrcode.UniqueViolation) {
+		return ErrURLexists
 	}
+	// if err != nil {
+	// 	var pgerr *pgx.PgError
+	// 	if errors.As(err, &pgerr) {
+	// 		if pgerr.Code == pgerrcode.UniqueViolation {
+	// 			return ErrURLexists
+	// 		}
+	// 	} else {
+	// 		return fmt.Errorf("AddURL: unable to add URL to DB: %w", err)
+	// 	}
+	// }
 	return nil
 }
 
@@ -66,9 +70,9 @@ func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, id string) (string
 	return originalURL, nil
 }
 
-func (d *DataBaseStorage) GetShortURL(ctx context.Context, original_url string) (string, error) {
+func (d *DataBaseStorage) GetShortURL(ctx context.Context, originalURL string) (string, error) {
 	query := `SELECT id FROM urls WHERE original_url = $1`
-	row := d.DataBase.QueryRowContext(ctx, query, original_url)
+	row := d.DataBase.QueryRowContext(ctx, query, originalURL)
 	var shortURL string
 	if err := row.Scan(&shortURL); err != nil {
 		if err == sql.ErrNoRows {
