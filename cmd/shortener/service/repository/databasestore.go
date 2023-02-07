@@ -22,12 +22,16 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	}
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS urls (
-			original_url VARCHAR UNIQUE, 
+			original_url VARCHAR, 
 			id VARCHAR,
 			user_id VARCHAR)
 		`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute a query to DB: %w", err)
+	}
+	_, err = db.Exec(`CREATE UNIQUE INDEX original_idx ON urls (original_url)`)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create unique index to URL in DB: %w", err)
 	}
 	return &DataBaseStorage{DataBase: db}, nil
 }
