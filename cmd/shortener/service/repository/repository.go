@@ -12,11 +12,13 @@ var (
 	ErrKeyNotSpecified = errors.New("the key is not specified")
 	ErrKeyNotExists    = errors.New("the key is not exists")
 	ErrIDNotValid      = errors.New("sign-userID is not valid")
+	ErrURLexists       = errors.New("such URl already exist in DB")
 )
 
 type AddorGetURL interface {
 	AddURL(u URL, userID string) error
-	GetURL(ctx context.Context, s string) (string, error)
+	GetOriginalURL(ctx context.Context, s string) (string, error)
+	GetShortURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
 	BatchURL(ctx context.Context, userID string, originalurls []Correlation) ([]ShortCorrelation, error)
 	Close()

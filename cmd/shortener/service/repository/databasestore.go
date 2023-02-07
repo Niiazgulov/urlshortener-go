@@ -3,8 +3,11 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -19,7 +22,7 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	}
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS urls (
-			original_url VARCHAR, 
+			original_url VARCHAR UNIQUE, 
 			id VARCHAR,
 			user_id VARCHAR)
 		`)
@@ -30,15 +33,22 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 }
 
 func (d *DataBaseStorage) AddURL(u URL, userID string) error {
-	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
+	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
 	if err != nil {
-		return fmt.Errorf("unable to AddURL to DB: %w", err)
+		var pgerr *pgx.PgError
+		if errors.As(err, &pgerr) {
+			if pgerr.Code == pgerrcode.UniqueViolation {
+				return ErrURLexists
+			}
+		} else {
+			return fmt.Errorf("AddURL: unable to add URL to DB: %w", err)
+		}
 	}
 	return nil
 }
 
-func (d *DataBaseStorage) GetURL(ctx context.Context, id string) (string, error) {
+func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, id string) (string, error) {
 	query := `SELECT original_url FROM urls WHERE id = $1`
 	row := d.DataBase.QueryRowContext(ctx, query, id)
 	var originalURL string
@@ -46,9 +56,22 @@ func (d *DataBaseStorage) GetURL(ctx context.Context, id string) (string, error)
 		if err == sql.ErrNoRows {
 			return "", ErrKeyNotFound
 		}
-		return "", fmt.Errorf("OMG, I unable to Scan originalURL from DB (GetURL): %w", err)
+		return "", fmt.Errorf("OMG, I unable to Scan originalURL from DB (GetOriginalURL): %w", err)
 	}
 	return originalURL, nil
+}
+
+func (d *DataBaseStorage) GetShortURL(ctx context.Context, original_url string) (string, error) {
+	query := `SELECT id FROM urls WHERE original_url = $1`
+	row := d.DataBase.QueryRowContext(ctx, query, original_url)
+	var shortURL string
+	if err := row.Scan(&shortURL); err != nil {
+		if err == sql.ErrNoRows {
+			return "", ErrKeyNotFound
+		}
+		return "", fmt.Errorf("OMG, I unable to Scan shortURL from DB (GetShortURL): %w", err)
+	}
+	return shortURL, nil
 }
 
 func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
@@ -85,10 +108,17 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)
-		query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
+		query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
 		_, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, userID)
 		if err != nil {
-			return nil, fmt.Errorf("BatchURL: unable to AddURL to DB: %w", err)
+			var pgerr *pgx.PgError
+			if errors.As(err, &pgerr) {
+				if pgerr.Code == pgerrcode.UniqueViolation {
+					return nil, ErrURLexists
+				}
+			} else {
+				return nil, fmt.Errorf("BatchURL: unable to add URL to DB: %w", err)
+			}
 		}
 	}
 	return newurls, nil

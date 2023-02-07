@@ -24,7 +24,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		// Здесь мы проверяем что урл который мы сгенерировали отсутствует в базе
 		// если же он там есть, мы перегенерируем и так пока не получим уникальный
 		for {
-			if _, err := repo.GetURL(r.Context(), shortID); err != nil {
+			if _, err := repo.GetOriginalURL(r.Context(), shortID); err != nil {
 				if err == repository.ErrKeyNotFound {
 					break
 				} else {
@@ -58,8 +58,19 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
 		err = repo.AddURL(ourPoorURL, userID)
 		if err != nil {
-			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
-			return
+			if errors.Is(err, repository.ErrURLexists) {
+				oldshorturl, err := repo.GetShortURL(r.Context(), longURL)
+				if err != nil {
+					log.Printf("PostHandler: unable to get shortURL by longURL: %v", err)
+					http.Error(w, "PostHandler: unable to get shortURL from DB", http.StatusInternalServerError)
+					return
+				}
+				w.WriteHeader(http.StatusConflict)
+				w.Write([]byte(oldshorturl))
+			} else {
+				http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
+				return
+			}
 		}
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(shorturl.String()))
@@ -80,12 +91,12 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 		}
 		shortID := repository.GenerateRandomString()
 		for {
-			if _, err := repo.GetURL(r.Context(), shortID); err != nil {
+			if _, err := repo.GetOriginalURL(r.Context(), shortID); err != nil {
 				if err == repository.ErrKeyNotFound {
 					break
 				} else {
 					log.Printf("PostJSONHandler: unable to get URL by short ID: %v", err)
-					http.Error(w, "PostJSONHandler: unable to get url from DB", http.StatusNetworkAuthenticationRequired) //511
+					http.Error(w, "PostJSONHandler: unable to get url from DB", http.StatusInternalServerError)
 					return
 				}
 			}
@@ -93,7 +104,7 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 		}
 		userID, token, err := UserIDfromCookie(repo, r)
 		if err != nil {
-			http.Error(w, "PostJSONHandler: Status internal server error", http.StatusInternalServerError) //503
+			http.Error(w, "PostJSONHandler: Status internal server error", http.StatusInternalServerError)
 			return
 		}
 		if token != nil {
@@ -101,8 +112,19 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
 		err = repo.AddURL(ourPoorURL, userID)
-		if err != nil {
-			http.Error(w, "PostJSONHandler: Status internal server error", http.StatusBadRequest)
+		if errors.Is(err, repository.ErrURLexists) {
+			oldshorturl, err := repo.GetShortURL(r.Context(), longURL)
+			response := repository.JSONKeymap{ShortJSON: oldshorturl, LongJSON: longURL}
+			if err != nil {
+				log.Printf("PostJSONHandler: unable to get shortURL by longURL: %v", err)
+				http.Error(w, "PostJSONHandler: unable to get shortURL from DB", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(&response)
+		} else {
+			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
 			return
 		}
 		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID)
@@ -116,7 +138,7 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		shortnew := chi.URLParam(r, "id")
-		originalURL, err := repo.GetURL(r.Context(), shortnew)
+		originalURL, err := repo.GetOriginalURL(r.Context(), shortnew)
 		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) {
 			log.Printf("GetHandler: unable to Get key from repo: %v", err)
 			http.Error(w, "GetHandler: unable to GET Original url", http.StatusInternalServerError) //504

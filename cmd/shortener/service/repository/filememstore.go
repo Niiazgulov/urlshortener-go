@@ -52,12 +52,24 @@ func (fs *FileStorage) AddURL(u URL, userID string) error {
 	return nil
 }
 
-func (fs *FileStorage) GetURL(_ context.Context, key string) (string, error) {
+func (fs *FileStorage) GetOriginalURL(_ context.Context, key string) (string, error) {
 	if key == "" {
 		return "", ErrKeyNotSpecified
 	}
 	for _, urlmap := range fs.NewMap {
 		if value, ok := urlmap[key]; ok {
+			return value, nil
+		}
+	}
+	return "", ErrKeyNotFound
+}
+
+func (fs *FileStorage) GetShortURL(_ context.Context, originalurl string) (string, error) {
+	if originalurl == "" {
+		return "", ErrKeyNotSpecified
+	}
+	for _, urlmap := range fs.NewMap {
+		if value, ok := urlmap[originalurl]; ok {
 			return value, nil
 		}
 	}
