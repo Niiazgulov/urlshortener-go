@@ -63,14 +63,14 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			return
 		}
 		if errors.Is(err, repository.ErrURLexists) {
-			shortId, err := repo.GetShortURL(r.Context(), longURL)
+			shortID, err = repo.GetShortURL(r.Context(), longURL)
 			if err != nil {
 				log.Printf("PostHandler: unable to get shortURL by longURL: %v", err)
 				http.Error(w, "PostHandler: unable to get shortURL from DB", http.StatusInternalServerError)
 				return
 			}
 			handlerstatus = http.StatusConflict
-			shorturl = configuration.Cfg.ConfigURL.JoinPath(shortId)
+			shorturl = configuration.Cfg.ConfigURL.JoinPath(shortID)
 		}
 		response := shorturl.String()
 		w.WriteHeader(handlerstatus)

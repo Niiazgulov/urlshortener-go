@@ -33,7 +33,7 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 }
 
 func (d *DataBaseStorage) AddURL(u URL, userID string) error {
-	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
+	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
 	if err != nil {
 		var pgerr *pgx.PgError
