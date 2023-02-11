@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
+	"log"
 	"math/rand"
+	"net/http"
 	"time"
 )
 
@@ -49,6 +51,22 @@ func GenerateRandomString() string {
 		result = append(result, s)
 	}
 	return string(result)
+}
+
+func RandomStringUniqueCheck(repo AddorGetURL, w http.ResponseWriter, r *http.Request, shortID string) string {
+	for {
+		if _, err := repo.GetOriginalURL(r.Context(), shortID); err != nil {
+			if err == ErrKeyNotFound {
+				break
+			} else {
+				log.Printf("PostHandler: unable to get URL by short ID: %v", err)
+				http.Error(w, "PostHandler: unable to get url from DB", http.StatusInternalServerError)
+				return ""
+			}
+		}
+		shortID = GenerateRandomString()
+	}
+	return shortID
 }
 
 func GenerateRandomIntString() string {
