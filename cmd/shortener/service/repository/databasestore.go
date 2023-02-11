@@ -24,7 +24,8 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS urls (
 			original_url TEXT UNIQUE, 
-			id TEXT,
+			shortid TEXT,
+			id SERIAL PRIMARY KEY
 			user_id TEXT)
 		`)
 	if err != nil {
@@ -34,7 +35,7 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 }
 
 func (d *DataBaseStorage) AddURL(u URL, userID string) error {
-	query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3)`
+	query := `INSERT INTO urls (original_url, shortid, user_id) VALUES ($1, $2, $3)`
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
 	if err != nil && strings.Contains(err.Error(), pgerrcode.UniqueViolation) {
 		return ErrURLexists
@@ -42,9 +43,9 @@ func (d *DataBaseStorage) AddURL(u URL, userID string) error {
 	return nil
 }
 
-func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, id string) (string, error) {
-	query := `SELECT original_url FROM urls WHERE id = $1`
-	row := d.DataBase.QueryRowContext(ctx, query, id)
+func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, shortid string) (string, error) {
+	query := `SELECT original_url FROM urls WHERE shortid = $1`
+	row := d.DataBase.QueryRowContext(ctx, query, shortid)
 	var originalURL string
 	if err := row.Scan(&originalURL); err != nil {
 		if err == sql.ErrNoRows {
@@ -56,7 +57,7 @@ func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, id string) (string
 }
 
 func (d *DataBaseStorage) GetShortURL(ctx context.Context, originalURL string) (string, error) {
-	query := `SELECT id FROM urls WHERE original_url = $1`
+	query := `SELECT shortid FROM urls WHERE original_url = $1`
 	row := d.DataBase.QueryRowContext(ctx, query, originalURL)
 	var shortURL string
 	if err := row.Scan(&shortURL); err != nil {
@@ -69,7 +70,7 @@ func (d *DataBaseStorage) GetShortURL(ctx context.Context, originalURL string) (
 }
 
 func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
-	query := `SELECT original_url, id FROM urls WHERE user_id = $1`
+	query := `SELECT original_url, shortid FROM urls WHERE user_id = $1`
 	rows, err := d.DataBase.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to return urls from DB (FindAllUserUrls): %w", err)
@@ -77,13 +78,13 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 	defer rows.Close()
 	AllIDUrls := make(map[string]string)
 	for rows.Next() {
-		var id string
+		var shortid string
 		var originalURL string
-		err = rows.Scan(&originalURL, &id)
+		err = rows.Scan(&originalURL, &shortid)
 		if err != nil {
 			return nil, err
 		}
-		AllIDUrls[id] = originalURL
+		AllIDUrls[shortid] = originalURL
 	}
 	err = rows.Err()
 	if err != nil {
@@ -102,7 +103,7 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)
-		query := `INSERT INTO urls (original_url, id, user_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
+		query := `INSERT INTO urls (original_url, shortid, user_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
 		_, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, userID)
 		if err != nil {
 			var pgerr *pgx.PgError
