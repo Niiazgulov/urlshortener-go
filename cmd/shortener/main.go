@@ -28,23 +28,6 @@ func main() {
 		log.Fatal(err)
 	}
 	defer repo.Close()
-	// var repo repository.AddorGetURL
-	// if configuration.Cfg.DBPath != "" {
-	// 	repo, err = repository.NewDataBaseStorqage(configuration.Cfg.DBPath)
-	// 	if err != nil {
-	// 		log.Fatal("GetRepository: unable to make repo (NewDataBaseStorage): %w", err)
-	// 	}
-	// } else {
-	// 	f, err := os.OpenFile(configuration.Cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
-	// 	if err != nil {
-	// 		log.Fatal("GetRepository: unable to open file: %w", err)
-	// 	}
-	// 	repo, err = repository.NewFileStorage(f)
-	// 	if err != nil {
-	// 		log.Fatal("GetRepository: unable to make repo (NewFileStorage): %w", err)
-	// 	}
-	// }
-	// defer repo.Close()
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
