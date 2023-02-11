@@ -11,8 +11,7 @@ import (
 
 type FileStorage struct {
 	FileJSON *os.File
-	// NewMap   map[string]map[string]string
-	urlMap map[string]URL
+	urlMap   map[string]URL
 }
 
 func NewFileStorage(f *os.File) (AddorGetURL, error) {
@@ -46,12 +45,12 @@ func (fs *FileStorage) AddURL(u URL, userID string) error {
 	return nil
 }
 
-func (fs *FileStorage) GetOriginalURL(_ context.Context, key string) (string, error) {
-	if key == "" {
+func (fs *FileStorage) GetOriginalURL(_ context.Context, shortID string) (string, error) {
+	if shortID == "" {
 		return "", ErrKeyNotSpecified
 	}
 	for _, v := range fs.urlMap {
-		if v.ShortURL == key {
+		if shortID == v.ShortURL {
 			return v.OriginalURL, nil
 		}
 	}
