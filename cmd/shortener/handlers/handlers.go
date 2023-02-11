@@ -104,7 +104,10 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			handlerstatus = http.StatusConflict
 		}
 		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID)
-		response := repository.JSONKeymap{ShortJSON: shortURL.String(), LongJSON: longURL}
+		response := repository.JSONKeymap{
+			ShortJSON: shortURL.String(),
+			LongJSON:  longURL,
+		}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(handlerstatus)
 		json.NewEncoder(w).Encode(&response)
@@ -121,7 +124,7 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			return
 		}
 		if errors.Is(err, repository.ErrKeyNotExists) {
-			http.Error(w, "GetHandler: unable to GET Original url", http.StatusBadRequest)
+			http.Error(w, "GetHandler: url not found", http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
@@ -148,36 +151,40 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			return
 		}
 		urlsmap, err := repo.FindAllUserUrls(r.Context(), userID)
-		if err != nil {
-			if err == repository.ErrKeyNotFound {
-				log.Println("Error while FindAllUserUrls", err)
-				w.WriteHeader(http.StatusNoContent)
-			} else {
-				log.Println("Error while getting URLs", err)
-				http.Error(w, "GetUserAllUrlsHandler: Internal server error", http.StatusInternalServerError)
-			}
-		} else {
-			var urlsList []UserURLs
-			for short, originalURL := range urlsmap {
-				shorturl := configuration.Cfg.ConfigURL.JoinPath(short)
-				urlsList = append(urlsList, UserURLs{ShortURL: shorturl.String(), OriginalURL: originalURL})
-			}
-			response, err := json.Marshal(urlsList)
-			if err != nil {
-				log.Println("GetUserAllUrlsHandler: Error while serializing response", err)
-				http.Error(w, "Status internal server error", http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("content-type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			w.Write(response)
+		if err != nil && !errors.Is(err, repository.ErrKeyNotFound) {
+			log.Println("Error while getting URLs", err)
+			http.Error(w, "GetUserAllUrlsHandler: Internal server error", http.StatusInternalServerError)
+			return
 		}
+		if errors.Is(err, repository.ErrKeyNotFound) {
+			log.Println("Error while FindAllUserUrls", err)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		var urlsList []UserURLs
+		for short, originalURL := range urlsmap {
+			shorturl := configuration.Cfg.ConfigURL.JoinPath(short)
+			urlsList = append(urlsList, UserURLs{ShortURL: shorturl.String(), OriginalURL: originalURL})
+		}
+		response, err := json.Marshal(urlsList)
+		if err != nil {
+			log.Println("GetUserAllUrlsHandler: Error while serializing response", err)
+			http.Error(w, "Status internal server error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("content-type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
 	}
 }
 
 func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dbstorage := repo.(*repository.DataBaseStorage)
+		dbstorage, ok := repo.(*repository.DataBaseStorage)
+		if !ok {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
 		db := dbstorage.DataBase
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
@@ -256,17 +263,16 @@ func UserIDfromCookie(repo repository.AddorGetURL, r *http.Request) (string, *ht
 		}
 		cookie := &http.Cookie{Name: userIDCookie, Value: signValue, MaxAge: 0}
 		return userID, cookie, nil
-	} else {
-		signValue := sign.Value
-		userID, checkAuth, err := GetUserSign(signValue)
-		if err != nil {
-			log.Println("Error when getting of user sign (UserIDfromCookie)", err)
-			return "", nil, err
-		}
-		if !checkAuth {
-			log.Println("Error of equal checking (UserIDfromCookie)", err)
-			return "", nil, err
-		}
-		return userID, cookie, nil
 	}
+	signValue := sign.Value
+	userID, checkAuth, err := GetUserSign(signValue)
+	if err != nil {
+		log.Println("Error when getting of user sign (UserIDfromCookie)", err)
+		return "", nil, err
+	}
+	if !checkAuth {
+		log.Println("Error of equal checking (UserIDfromCookie)", err)
+		return "", nil, err
+	}
+	return userID, cookie, nil
 }

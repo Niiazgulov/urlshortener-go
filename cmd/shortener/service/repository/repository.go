@@ -3,10 +3,14 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
 )
 
 var (
@@ -42,6 +46,25 @@ const (
 	ShortURLMaxLen = 7
 	BaseTest       = "http://localhost:8080/"
 )
+
+func GetRepository(cfg *configuration.Config) (AddorGetURL, error) {
+	if cfg.DBPath != "" {
+		repo, err := NewDataBaseStorqage(cfg.DBPath)
+		if err != nil {
+			return nil, fmt.Errorf("GetRepository: unable to make repo (NewDataBaseStorage): %w", err)
+		}
+		return repo, nil
+	}
+	f, err := os.OpenFile(cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+	if err != nil {
+		return nil, fmt.Errorf("GetRepository: unable to open file: %w", err)
+	}
+	repo, err := NewFileStorage(f)
+	if err != nil {
+		return nil, fmt.Errorf("GetRepository: unable to make repo (NewFileStorage): %w", err)
+	}
+	return repo, nil
+}
 
 func GenerateRandomString() string {
 	rand.Seed(time.Now().UnixNano())
