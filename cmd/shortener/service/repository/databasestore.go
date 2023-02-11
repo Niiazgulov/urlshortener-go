@@ -25,7 +25,7 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 		CREATE TABLE IF NOT EXISTS urls (
 			original_url TEXT UNIQUE, 
 			shortid TEXT,
-			id SERIAL PRIMARY KEY
+			id SERIAL PRIMARY KEY,
 			user_id TEXT)
 		`)
 	if err != nil {
