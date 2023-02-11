@@ -34,9 +34,6 @@ func (fs *FileStorage) AddURL(u URL, userID string) error {
 	if fs.urlMap == nil {
 		fs.urlMap = make(map[string]URL)
 	}
-	if u.ShortURL == "" {
-		return ErrKeyNotSpecified
-	}
 	fs.urlMap[userID] = u
 	jsonData, err := json.Marshal(fs.urlMap)
 	if err != nil {
@@ -53,11 +50,12 @@ func (fs *FileStorage) GetOriginalURL(_ context.Context, key string) (string, er
 	if key == "" {
 		return "", ErrKeyNotSpecified
 	}
-	u, ok := fs.urlMap[key]
-	if !ok {
-		return "", ErrKeyNotFound
+	for _, v := range fs.urlMap {
+		if v.ShortURL == key {
+			return v.OriginalURL, nil
+		}
 	}
-	return u.OriginalURL, nil
+	return "", ErrKeyNotFound
 }
 
 func (fs *FileStorage) GetShortURL(_ context.Context, originalurl string) (string, error) {
@@ -70,11 +68,6 @@ func (fs *FileStorage) GetShortURL(_ context.Context, originalurl string) (strin
 		}
 	}
 	return "", ErrKeyNotFound
-	// u, ok := fs.urlMap[originalurl]
-	// if !ok { // надо проверить
-	// 	return "", ErrKeyNotFound
-	// }
-	// return u.ShortURL, nil
 }
 
 func (fs *FileStorage) FindAllUserUrls(_ context.Context, userID string) (map[string]string, error) {
