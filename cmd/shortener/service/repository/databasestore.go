@@ -3,13 +3,12 @@ package repository
 import (
 	"context"
 	"database/sql"
-
-	// "errors"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/jackc/pgerrcode"
-	// "github.com/jackc/pgx"
+	"github.com/jackc/pgx"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -70,55 +69,55 @@ func (d *DataBaseStorage) GetShortURL(ctx context.Context, originalURL string) (
 	return shortURL, nil
 }
 
-// func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
-// 	query := `SELECT original_url, shortid FROM urls WHERE user_id = $1`
-// 	rows, err := d.DataBase.QueryContext(ctx, query, userID)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("unable to return urls from DB (FindAllUserUrls): %w", err)
-// 	}
-// 	defer rows.Close()
-// 	AllIDUrls := make(map[string]string)
-// 	for rows.Next() {
-// 		var shortid string
-// 		var originalURL string
-// 		err = rows.Scan(&originalURL, &shortid)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		AllIDUrls[shortid] = originalURL
-// 	}
-// 	err = rows.Err()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return AllIDUrls, nil
-// }
+func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
+	query := `SELECT original_url, shortid FROM urls WHERE user_id = $1`
+	rows, err := d.DataBase.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to return urls from DB (FindAllUserUrls): %w", err)
+	}
+	defer rows.Close()
+	AllIDUrls := make(map[string]string)
+	for rows.Next() {
+		var shortid string
+		var originalURL string
+		err = rows.Scan(&originalURL, &shortid)
+		if err != nil {
+			return nil, err
+		}
+		AllIDUrls[shortid] = originalURL
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return AllIDUrls, nil
+}
 
-// func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]ShortCorrelation, error) {
-// 	var newurls []ShortCorrelation
-// 	for _, batch := range urls {
-// 		shortID := GenerateRandomString()
-// 		shorturl := BaseTest + shortID
-// 		newurl := ShortCorrelation{
-// 			ShortURL:      shorturl,
-// 			CorrelationID: batch.CorrelationID,
-// 		}
-// 		newurls = append(newurls, newurl)
-// 		query := `INSERT INTO urls (original_url, shortid, user_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
-// 		_, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, userID)
-// 		if err != nil {
-// 			var pgerr *pgx.PgError
-// 			if errors.As(err, &pgerr) {
-// 				if pgerr.Code == pgerrcode.UniqueViolation {
-// 					return nil, ErrURLexists
-// 				}
-// 			} else {
-// 				return nil, fmt.Errorf("BatchURL: unable to add URL to DB: %w", err)
-// 			}
-// 		}
-// 	}
-// 	return newurls, nil
-// }
+func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]ShortCorrelation, error) {
+	var newurls []ShortCorrelation
+	for _, batch := range urls {
+		shortID := GenerateRandomString()
+		shorturl := BaseTest + shortID
+		newurl := ShortCorrelation{
+			ShortURL:      shorturl,
+			CorrelationID: batch.CorrelationID,
+		}
+		newurls = append(newurls, newurl)
+		query := `INSERT INTO urls (original_url, shortid, user_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
+		_, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, userID)
+		if err != nil {
+			var pgerr *pgx.PgError
+			if errors.As(err, &pgerr) {
+				if pgerr.Code == pgerrcode.UniqueViolation {
+					return nil, ErrURLexists
+				}
+			} else {
+				return nil, fmt.Errorf("BatchURL: unable to add URL to DB: %w", err)
+			}
+		}
+	}
+	return newurls, nil
+}
 
 func (d DataBaseStorage) Close() {
 	d.DataBase.Close()
