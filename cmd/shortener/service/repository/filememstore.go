@@ -3,7 +3,8 @@ package repository
 import (
 	"context"
 	"encoding/json"
-	"errors"
+
+	// "errors"
 	"fmt"
 	"io"
 	"os"
@@ -17,10 +18,10 @@ type FileStorage struct {
 func NewFileStorage(f *os.File) (AddorGetURL, error) {
 	m := make(map[string]URL)
 	err := json.NewDecoder(f).Decode(&m)
-	if err != nil && !errors.Is(err, io.EOF) {
+	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("unable to unmarshal file into map: %w", err)
 	}
-	if errors.Is(err, io.EOF) {
+	if err == io.EOF {
 		m = make(map[string]URL)
 	}
 	return &FileStorage{
@@ -52,13 +53,19 @@ func (fs *FileStorage) GetOriginalURL(_ context.Context, shortID string) (string
 	if shortID == "" {
 		return "", ErrKeyNotSpecified
 	}
-	m := make(map[string]string)
+	// m := make(map[string]string)
+	// for _, v := range fs.urlMap {
+	// 	if shortID == v.ShortURL {
+	// 		m[shortID] = v.OriginalURL
+	// 	}
+	// }
+	// return m[shortID], nil
 	for _, v := range fs.urlMap {
 		if shortID == v.ShortURL {
-			m[shortID] = v.OriginalURL
+			return v.OriginalURL, nil
 		}
 	}
-	return m[shortID], nil
+	return "", ErrKeyNotFound
 }
 
 func (fs *FileStorage) GetShortURL(_ context.Context, originalurl string) (string, error) {
