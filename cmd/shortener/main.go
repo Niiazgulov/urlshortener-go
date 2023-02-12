@@ -37,11 +37,11 @@ func main() {
 	r.Use(handlers.DecomprMiddlw)
 	r.Route("/", func(r chi.Router) {
 		r.Get("/{id}", handlers.GetHandler(repo))
-		r.Get("/api/user/urls", handlers.GetUserAllUrlsHandler(repo))
+		// r.Get("/api/user/urls", handlers.GetUserAllUrlsHandler(repo))
 		r.Get("/ping", handlers.GetPingHandler(repo, configuration.Cfg))
 		r.Post("/", handlers.PostHandler(repo, configuration.Cfg))
 		r.Post("/api/shorten", handlers.PostJSONHandler(repo, configuration.Cfg))
-		r.Post("/api/shorten/batch", handlers.PostBatchHandler(repo))
+		// r.Post("/api/shorten/batch", handlers.PostBatchHandler(repo))
 	})
 	log.Fatal(http.ListenAndServe(configuration.Cfg.ServerAddress, r))
 }

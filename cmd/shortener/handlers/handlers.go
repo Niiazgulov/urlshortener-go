@@ -138,45 +138,45 @@ type UserURLs struct {
 	OriginalURL string `json:"original_url"`
 }
 
-func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		encodedCookie, err := r.Cookie(userIDCookie)
-		if err != nil {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		userID, _, err := GetUserSign(encodedCookie.Value)
-		if err != nil {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		urlsmap, err := repo.FindAllUserUrls(r.Context(), userID)
-		if err != nil && !errors.Is(err, repository.ErrKeyNotFound) {
-			log.Println("Error while getting URLs", err)
-			http.Error(w, "GetUserAllUrlsHandler: Internal server error", http.StatusInternalServerError)
-			return
-		}
-		if errors.Is(err, repository.ErrKeyNotFound) {
-			log.Println("Error while FindAllUserUrls", err)
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		var urlsList []UserURLs
-		for short, originalURL := range urlsmap {
-			shorturl := configuration.Cfg.ConfigURL.JoinPath(short)
-			urlsList = append(urlsList, UserURLs{ShortURL: shorturl.String(), OriginalURL: originalURL})
-		}
-		response, err := json.Marshal(urlsList)
-		if err != nil {
-			log.Println("GetUserAllUrlsHandler: Error while serializing response", err)
-			http.Error(w, "Status internal server error", http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(response)
-	}
-}
+// func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		encodedCookie, err := r.Cookie(userIDCookie)
+// 		if err != nil {
+// 			w.WriteHeader(http.StatusNoContent)
+// 			return
+// 		}
+// 		userID, _, err := GetUserSign(encodedCookie.Value)
+// 		if err != nil {
+// 			w.WriteHeader(http.StatusNoContent)
+// 			return
+// 		}
+// 		urlsmap, err := repo.FindAllUserUrls(r.Context(), userID)
+// 		if err != nil && !errors.Is(err, repository.ErrKeyNotFound) {
+// 			log.Println("Error while getting URLs", err)
+// 			http.Error(w, "GetUserAllUrlsHandler: Internal server error", http.StatusInternalServerError)
+// 			return
+// 		}
+// 		if errors.Is(err, repository.ErrKeyNotFound) {
+// 			log.Println("Error while FindAllUserUrls", err)
+// 			w.WriteHeader(http.StatusNoContent)
+// 			return
+// 		}
+// 		var urlsList []UserURLs
+// 		for short, originalURL := range urlsmap {
+// 			shorturl := configuration.Cfg.ConfigURL.JoinPath(short)
+// 			urlsList = append(urlsList, UserURLs{ShortURL: shorturl.String(), OriginalURL: originalURL})
+// 		}
+// 		response, err := json.Marshal(urlsList)
+// 		if err != nil {
+// 			log.Println("GetUserAllUrlsHandler: Error while serializing response", err)
+// 			http.Error(w, "Status internal server error", http.StatusInternalServerError)
+// 			return
+// 		}
+// 		w.Header().Set("content-type", "application/json")
+// 		w.WriteHeader(http.StatusOK)
+// 		w.Write(response)
+// 	}
+// }
 
 func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -197,42 +197,42 @@ func GetPingHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.
 	}
 }
 
-func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		request, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "PostBatchHandler: can't read r.Body", http.StatusBadRequest)
-			return
-		}
-		userID, token, err := UserIDfromCookie(repo, r)
-		if err != nil {
-			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusInternalServerError)
-			return
-		}
-		var originalurls []repository.Correlation
-		err = json.Unmarshal(request, &originalurls)
-		if err != nil {
-			http.Error(w, "PostBatchHandler: can't Unmarshal request", http.StatusBadRequest)
-			return
-		}
-		result, err := repo.BatchURL(r.Context(), userID, originalurls)
-		if err != nil {
-			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusInternalServerError)
-			return
-		}
-		response, err := json.Marshal(result)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if token != nil {
-			http.SetCookie(w, token)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		w.Write(response)
-	}
-}
+// func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		request, err := io.ReadAll(r.Body)
+// 		if err != nil {
+// 			http.Error(w, "PostBatchHandler: can't read r.Body", http.StatusBadRequest)
+// 			return
+// 		}
+// 		userID, token, err := UserIDfromCookie(repo, r)
+// 		if err != nil {
+// 			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusInternalServerError)
+// 			return
+// 		}
+// 		var originalurls []repository.Correlation
+// 		err = json.Unmarshal(request, &originalurls)
+// 		if err != nil {
+// 			http.Error(w, "PostBatchHandler: can't Unmarshal request", http.StatusBadRequest)
+// 			return
+// 		}
+// 		result, err := repo.BatchURL(r.Context(), userID, originalurls)
+// 		if err != nil {
+// 			http.Error(w, "PostBatchHandler: Status internal server error (BatchURL)", http.StatusInternalServerError)
+// 			return
+// 		}
+// 		response, err := json.Marshal(result)
+// 		if err != nil {
+// 			http.Error(w, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 		if token != nil {
+// 			http.SetCookie(w, token)
+// 		}
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.WriteHeader(http.StatusCreated)
+// 		w.Write(response)
+// 	}
+// }
 
 func DecomprMiddlw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
