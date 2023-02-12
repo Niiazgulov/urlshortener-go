@@ -31,12 +31,12 @@ func NewFileStorage(f *os.File) (AddorGetURL, error) {
 }
 
 func (fs *FileStorage) AddURL(u URL, userID string) error {
-	if fs.urlMap == nil {
-		fs.urlMap = make(map[string]URL)
-	}
-	if u.ShortURL == "" {
-		return ErrKeyNotSpecified
-	}
+	// if fs.urlMap == nil {
+	// 	fs.urlMap = make(map[string]URL)
+	// }
+	// if u.ShortURL == "" {
+	// 	return ErrKeyNotSpecified
+	// }
 	fs.urlMap[userID] = u
 	jsonData, err := json.Marshal(fs.urlMap)
 	if err != nil {
