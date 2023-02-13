@@ -13,16 +13,21 @@ import (
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
+	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service"
 	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
+)
+
+var (
+	handlerstatus int
+	newshortID    string
 )
 
 func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		shortID := repository.GenerateRandomString()
 		shortID = repository.RandomStringUniqueCheck(repo, w, r, shortID)
-		shorturl := configuration.Cfg.ConfigURL.JoinPath(shortID)
 		longURLByte, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "PostHandler: can't read Body", http.StatusBadRequest)
@@ -43,22 +48,13 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			http.SetCookie(w, token)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
-		handlerstatus := http.StatusCreated
-		err = repo.AddURL(ourPoorURL, userID)
-		if err != nil && !errors.Is(err, repository.ErrURLexists) {
-			http.Error(w, "PostHandler: Status finternal server error", http.StatusBadRequest)
+		serv := service.ServiceStruct{Repos: repo}
+		newshortID, handlerstatus, err = serv.AddURL(ourPoorURL, userID, shortID)
+		if err != nil {
+			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError)
 			return
 		}
-		if errors.Is(err, repository.ErrURLexists) {
-			shortID, err = repo.GetShortURL(r.Context(), longURL)
-			if err != nil {
-				log.Printf("PostHandler: unable to get shortURL by longURL: %v", err)
-				http.Error(w, "PostHandler: unable to get shortURL from DB", http.StatusInternalServerError)
-				return
-			}
-			handlerstatus = http.StatusConflict
-			shorturl = configuration.Cfg.ConfigURL.JoinPath(shortID)
-		}
+		shorturl := configuration.Cfg.ConfigURL.JoinPath(newshortID)
 		response := shorturl.String()
 		w.WriteHeader(handlerstatus)
 		w.Write([]byte(response))
@@ -88,22 +84,13 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			http.SetCookie(w, token)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
-		handlerstatus := http.StatusCreated
-		err = repo.AddURL(ourPoorURL, userID)
-		if err != nil && !errors.Is(err, repository.ErrURLexists) {
-			http.Error(w, "PostHandler: Status internal server error", http.StatusBadRequest)
+		serv := service.ServiceStruct{Repos: repo}
+		newshortID, handlerstatus, err = serv.AddURL(ourPoorURL, userID, shortID)
+		if err != nil {
+			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError)
 			return
 		}
-		if errors.Is(err, repository.ErrURLexists) {
-			shortID, err = repo.GetShortURL(r.Context(), longURL)
-			if err != nil {
-				log.Printf("PostJSONHandler: unable to get shortURL by longURL: %v", err)
-				http.Error(w, "PostJSONHandler: unable to get shortURL from DB", http.StatusInternalServerError)
-				return
-			}
-			handlerstatus = http.StatusConflict
-		}
-		shortURL := configuration.Cfg.ConfigURL.JoinPath(shortID)
+		shortURL := configuration.Cfg.ConfigURL.JoinPath(newshortID)
 		response := repository.JSONKeymap{
 			ShortJSON: shortURL.String(),
 			LongJSON:  longURL,
