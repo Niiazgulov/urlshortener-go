@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/configuration"
-	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/handlers"
-	"github.com/Niiazgulov/urlshortener.git/cmd/shortener/service/repository"
+	"github.com/Niiazgulov/urlshortener.git/internal/configuration"
+	"github.com/Niiazgulov/urlshortener.git/internal/handlers"
+	"github.com/Niiazgulov/urlshortener.git/internal/service/repository"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
