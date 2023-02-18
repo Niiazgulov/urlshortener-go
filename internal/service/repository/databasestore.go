@@ -116,8 +116,8 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Sh
 			CorrelationID: batch.CorrelationID,
 		}
 		newurls = append(newurls, newurl)
-		query := `INSERT INTO urls (original_url, short_id, user_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
-		_, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, userID)
+		query := `INSERT INTO urls (original_url, short_id, user_id, deleted) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`
+		_, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, userID, false)
 		if err != nil {
 			var pgerr *pgx.PgError
 			if errors.As(err, &pgerr) {
