@@ -33,7 +33,7 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to CREATE TABLE in DB: %w", err)
 	}
-	_, err = db.Exec(`ALTER TABLE urls ADD COLUMN deleted boolean`)
+	_, err = db.Exec(`ALTER TABLE urls ADD COLUMN IF NOT EXISTS deleted boolean`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to ADD COLUMN deleted in DB: %w", err)
 	}
