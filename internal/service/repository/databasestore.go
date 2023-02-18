@@ -25,15 +25,16 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	}
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS urls (
-			original_url TEXT UNIQUE, 
-			short_id TEXT UNIQUE,
+			original_url VARCHAR UNIQUE, 
+			short_id VARCHAR UNIQUE,
 			id SERIAL PRIMARY KEY,
-			user_id TEXT)
+			user_id VARCHAR)
 		`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to CREATE TABLE in DB: %w", err)
 	}
-	_, err = db.Exec(`ALTER TABLE urls ADD COLUMN IF NOT EXISTS deleted boolean`)
+	_, err = db.Exec(`ALTER TABLE urls ADD COLUMN IF NOT EXISTS deleted BOOLEAN
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to ADD COLUMN deleted in DB: %w", err)
 	}
