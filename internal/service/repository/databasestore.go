@@ -28,7 +28,7 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 			original_url TEXT UNIQUE, 
 			short_id TEXT UNIQUE,
 			id SERIAL PRIMARY KEY,
-			user_id TEXT
+			user_id TEXT,
 			deleted BOOLEAN)
 		`)
 	if err != nil {
