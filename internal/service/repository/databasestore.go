@@ -61,7 +61,7 @@ func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, shortid string) (s
 		return "", fmt.Errorf("OMG, I unable to Scan originalURL from DB (GetOriginalURL): %w", err)
 	}
 	if urlIsDeleted == nil {
-		return "", fmt.Errorf("Deleted value is NIL (GetOriginalURL)")
+		return "", fmt.Errorf("deleted value is NIL (GetOriginalURL)")
 	}
 	if *urlIsDeleted {
 		return "", ErrURLdeleted
