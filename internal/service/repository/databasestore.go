@@ -28,11 +28,14 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 			original_url TEXT UNIQUE, 
 			short_id TEXT UNIQUE,
 			id SERIAL PRIMARY KEY,
-			user_id TEXT,
-			deleted BOOLEAN)
+			user_id TEXT)
 		`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to CREATE TABLE in DB: %w", err)
+	}
+	_, err = db.Exec(`ALTER TABLE urls ADD COLUMN deleted boolean`)
+	if err != nil {
+		return nil, fmt.Errorf("unable to ADD COLUMN deleted in DB: %w", err)
 	}
 	return &DataBaseStorage{DataBase: db}, nil
 }
