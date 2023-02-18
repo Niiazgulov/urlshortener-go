@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	// "sync"
 )
 
-// OLD MAP-MAP
 type FileStorage struct {
 	FileJSON *os.File
-	NewMap   map[string]map[string]string
+	// Ключ первой мапы - userID, ключ второй - shortID
+	NewMap map[string]map[string]string
+	// mutex  sync.RWMutex
 }
 
 func NewFileStorage(f *os.File) (AddorGetURL, error) {
@@ -84,7 +86,7 @@ func (fs *FileStorage) FindAllUserUrls(_ context.Context, userID string) (map[st
 	return AllIDUrls, nil
 }
 
-func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Correlation) ([]ShortCorrelation, error) {
+func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []ShortURL) ([]ShortCorrelation, error) {
 	if fs.NewMap == nil {
 		fs.NewMap = make(map[string]map[string]string)
 	}
@@ -111,6 +113,10 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []Corr
 	}
 	fs.FileJSON.Write(jsonData)
 	return newurls, nil
+}
+
+func (fs *FileStorage) DeleteUrls(urls []ShortURL) error {
+	return nil
 }
 
 func (fs *FileStorage) Close() {

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	// "time"
+
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -26,7 +28,8 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 			original_url TEXT UNIQUE, 
 			short_id TEXT UNIQUE,
 			id SERIAL PRIMARY KEY,
-			user_id TEXT)
+			user_id TEXT
+			deleted BOOLEAN)
 		`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to CREATE TABLE in DB: %w", err)
@@ -35,8 +38,8 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 }
 
 func (d *DataBaseStorage) AddURL(u URL, userID string) error {
-	query := `INSERT INTO urls (original_url, short_id, user_id) VALUES ($1, $2, $3)`
-	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID)
+	query := `INSERT INTO urls (original_url, short_id, user_id, deleted) VALUES ($1, $2, $3, $4)`
+	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID, false)
 	if err != nil && strings.Contains(err.Error(), pgerrcode.UniqueViolation) {
 		return ErrURLexists
 	}
@@ -44,14 +47,18 @@ func (d *DataBaseStorage) AddURL(u URL, userID string) error {
 }
 
 func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, shortid string) (string, error) {
-	query := `SELECT original_url FROM urls WHERE short_id = $1`
+	query := `SELECT original_url, deleted FROM urls WHERE short_id = $1`
 	row := d.DataBase.QueryRowContext(ctx, query, shortid)
 	var originalURL string
-	if err := row.Scan(&originalURL); err != nil {
-		if err == sql.ErrNoRows {
+	var urlIsDeleted = false
+	if err := row.Scan(&originalURL, &urlIsDeleted); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return "", ErrKeyNotFound
 		}
 		return "", fmt.Errorf("OMG, I unable to Scan originalURL from DB (GetOriginalURL): %w", err)
+	}
+	if urlIsDeleted {
+		return "", ErrURLdeleted
 	}
 	return originalURL, nil
 }
@@ -93,7 +100,7 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 	return AllIDUrls, nil
 }
 
-func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Correlation) ([]ShortCorrelation, error) {
+func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []ShortURL) ([]ShortCorrelation, error) {
 	var newurls []ShortCorrelation
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
@@ -117,6 +124,24 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Co
 		}
 	}
 	return newurls, nil
+}
+
+func (d *DataBaseStorage) DeleteUrls(urls []ShortURL) error {
+	if len(urls) == 0 {
+		return nil
+	}
+	deleted := true
+	urlsToDelete := make(map[string][]string)
+	for _, url := range urls {
+		urlsToDelete[url.UserID] = append(urlsToDelete[url.UserID], url.ID)
+	}
+	query := `UPDATE urls SET deleted =$1 WHERE short_id = $2 AND user_id = any($3)`
+	for userID, urlIDs := range urlsToDelete {
+		if _, err := d.DataBase.Exec(query, deleted, urlIDs, userID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d DataBaseStorage) Close() {

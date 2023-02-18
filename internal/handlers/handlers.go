@@ -196,7 +196,7 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusInternalServerError)
 			return
 		}
-		var originalurls []repository.Correlation
+		var originalurls []repository.ShortURL
 		err = json.Unmarshal(request, &originalurls)
 		if err != nil {
 			http.Error(w, "PostBatchHandler: can't Unmarshal request", http.StatusBadRequest)
@@ -218,6 +218,33 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		w.Write(response)
+	}
+}
+
+func DeleteUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		request, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "DeleteUrlsHandler: can't read r.Body", http.StatusBadRequest)
+			return
+		}
+		userID, token, err := UserIDfromCookie(repo, r)
+		if err != nil {
+			http.Error(w, "DeleteUrlsHandler: Error when getting of userID", http.StatusInternalServerError)
+			return
+		}
+		var requestURLs []string
+		err = json.Unmarshal(request, &requestURLs)
+		if err != nil {
+			http.Error(w, "DeleteUrlsHandler: can't Unmarshal request", http.StatusBadRequest)
+			return
+		}
+		// go repo.DeleteUrls(r.Context(), userID, requestURLs)
+		go repository.DeleteUrlsFunc(repo, requestURLs, userID)
+		if token != nil {
+			http.SetCookie(w, token)
+		}
+		w.WriteHeader(http.StatusAccepted)
 	}
 }
 

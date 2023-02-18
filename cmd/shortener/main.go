@@ -42,6 +42,7 @@ func main() {
 		r.Post("/", handlers.PostHandler(repo, configuration.Cfg))
 		r.Post("/api/shorten", handlers.PostJSONHandler(repo, configuration.Cfg))
 		r.Post("/api/shorten/batch", handlers.PostBatchHandler(repo))
+		r.Delete("/api/user/urls", handlers.DeleteUrlsHandler(repo))
 	})
 	log.Fatal(http.ListenAndServe(configuration.Cfg.ServerAddress, r))
 }

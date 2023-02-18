@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/internal/configuration"
@@ -19,6 +21,7 @@ var (
 	ErrKeyNotExists    = errors.New("the key is not exists")
 	ErrIDNotValid      = errors.New("sign-userID is not valid")
 	ErrURLexists       = errors.New("such URl already exist in DB")
+	ErrURLdeleted      = errors.New("URl previosly deleted")
 )
 
 type AddorGetURL interface {
@@ -26,7 +29,9 @@ type AddorGetURL interface {
 	GetOriginalURL(ctx context.Context, s string) (string, error)
 	GetShortURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
-	BatchURL(ctx context.Context, userID string, originalurls []Correlation) ([]ShortCorrelation, error)
+	BatchURL(ctx context.Context, userID string, originalurls []ShortURL) ([]ShortCorrelation, error)
+	// DeleteUrls(ctx context.Context, userID string, urls []string) error
+	DeleteUrls([]ShortURL) error
 	Close()
 }
 
@@ -107,8 +112,82 @@ type ShortCorrelation struct {
 	ShortURL      string `json:"short_url"`
 }
 
-type Correlation struct {
-	CorrelationID string `json:"correlation_id"`
+// type Correlation struct {
+// 	CorrelationID string `json:"correlation_id"`
+// 	OriginalURL   string `json:"original_url"`
+// 	UserID        string `json:"user_id"`
+// }
+
+type ShortURL struct {
+	ID            string `json:"id"`
 	OriginalURL   string `json:"original_url"`
 	UserID        string `json:"user_id"`
+	CorrelationID string `json:"correlation_id"`
+	Deleted       bool   `json:"deleted"`
+}
+
+func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
+	inputChannel := make(chan string)
+	go func() {
+		for _, shortid := range requestURLs {
+			inputChannel <- shortid
+		}
+		close(inputChannel)
+	}()
+
+	cpuNumber := runtime.NumCPU()
+	workerChs := make([]chan ShortURL, 0, cpuNumber)
+	for shortID := range inputChannel {
+		workerChannel := make(chan ShortURL)
+		createnewWorker(shortID, userID, workerChannel)
+		workerChs = append(workerChs, workerChannel)
+	}
+	structURLs := make([]ShortURL, 0, len(requestURLs))
+	structChannel := make(chan struct{})
+	defer close(structChannel)
+	for v := range fanInFunc(structChannel, workerChs...) {
+		structURLs = append(structURLs, v)
+	}
+	err := repo.DeleteUrls(structURLs)
+	if err != nil {
+		fmt.Printf("DeleteUrlsFunc: can't delete urls: %v\n", err)
+	}
+}
+
+func createnewWorker(shortID string, userID string, outChannel chan ShortURL) {
+	go func() {
+		defer func() {
+			if x := recover(); x != nil {
+				createnewWorker(shortID, userID, outChannel)
+				log.Printf("error while creating new worker: runtime panic: %v, %v", x, outChannel)
+			}
+		}()
+		outChannel <- ShortURL{ID: shortID, UserID: userID}
+		close(outChannel)
+	}()
+}
+
+func fanInFunc(structChannel <-chan struct{}, channels ...chan ShortURL) chan ShortURL {
+	var wg sync.WaitGroup
+	multiStream := make(chan ShortURL)
+	multiplex := func(c <-chan ShortURL) {
+		defer wg.Done()
+		for v := range c {
+			select {
+			case <-structChannel:
+				return
+			case multiStream <- v:
+			}
+		}
+	}
+	wg.Add(len(channels))
+	for _, c := range channels {
+		go multiplex(c)
+	}
+	go func() {
+		wg.Wait()
+		close(multiStream)
+	}()
+
+	return multiStream
 }
