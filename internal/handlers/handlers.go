@@ -47,9 +47,9 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 		if token != nil {
 			http.SetCookie(w, token)
 		}
-		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
+		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL, UserID: userID}
 		serv := service.ServiceStruct{Repos: repo}
-		newshortID, handlerstatus, err = serv.AddURL(ourPoorURL, userID, shortID)
+		newshortID, handlerstatus, err = serv.AddURL(ourPoorURL, shortID)
 		if err != nil {
 			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError)
 			return
@@ -83,9 +83,9 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 		if token != nil {
 			http.SetCookie(w, token)
 		}
-		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL}
+		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL, UserID: userID}
 		serv := service.ServiceStruct{Repos: repo}
-		newshortID, handlerstatus, err = serv.AddURL(ourPoorURL, userID, shortID)
+		newshortID, handlerstatus, err = serv.AddURL(ourPoorURL, shortID)
 		if err != nil {
 			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError)
 			return
@@ -200,7 +200,7 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			http.Error(w, "PostBatchHandler: Error when getting of userID", http.StatusInternalServerError)
 			return
 		}
-		var originalurls []repository.ShortURL
+		var originalurls []repository.URL
 		err = json.Unmarshal(request, &originalurls)
 		if err != nil {
 			http.Error(w, "PostBatchHandler: can't Unmarshal request", http.StatusBadRequest)

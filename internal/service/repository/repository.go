@@ -25,14 +25,22 @@ var (
 )
 
 type AddorGetURL interface {
-	AddURL(u URL, userID string) error
+	AddURL(u URL) error
 	GetOriginalURL(ctx context.Context, s string) (string, error)
 	GetShortURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
-	BatchURL(ctx context.Context, userID string, originalurls []ShortURL) ([]ShortCorrelation, error)
+	BatchURL(ctx context.Context, userID string, originalurls []URL) ([]ShortCorrelation, error)
 	// DeleteUrls(ctx context.Context, userID string, urls []string) error
-	DeleteUrls([]ShortURL) error
+	DeleteUrls([]URL) error
 	Close()
+}
+
+type URL struct {
+	ShortURL      string `json:"id"`
+	OriginalURL   string `json:"original_url"`
+	UserID        string `json:"user_id"`
+	CorrelationID string `json:"correlation_id"`
+	Deleted       bool   `json:"deleted"`
 }
 
 type JSONKeymap struct {
@@ -40,10 +48,10 @@ type JSONKeymap struct {
 	LongJSON  string `json:"url,omitempty"`
 }
 
-type URL struct {
-	ShortURL    string
-	OriginalURL string
-}
+// type URL struct {
+// 	ShortURL    string
+// 	OriginalURL string
+// }
 
 const (
 	Symbols        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -118,29 +126,21 @@ type ShortCorrelation struct {
 // 	UserID        string `json:"user_id"`
 // }
 
-type ShortURL struct {
-	ID            string `json:"id"`
-	OriginalURL   string `json:"original_url"`
-	UserID        string `json:"user_id"`
-	CorrelationID string `json:"correlation_id"`
-	Deleted       bool   `json:"deleted"`
-}
-
 func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
 	structChannel := make(chan struct{})
 	defer close(structChannel)
 	cpuNumber := runtime.NumCPU()
 	inputChannel := make(chan string)
-	structURLs := make([]ShortURL, 0, len(requestURLs))
+	structURLs := make([]URL, 0, len(requestURLs))
 	go func() {
 		for _, shortid := range requestURLs {
 			inputChannel <- shortid
 		}
 		close(inputChannel)
 	}()
-	workerChs := make([]chan ShortURL, 0, cpuNumber)
+	workerChs := make([]chan URL, 0, cpuNumber)
 	for shortID := range inputChannel {
-		workerChannel := make(chan ShortURL)
+		workerChannel := make(chan URL)
 		createnewWorker(shortID, userID, workerChannel)
 		workerChs = append(workerChs, workerChannel)
 	}
@@ -153,7 +153,7 @@ func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
 	}
 }
 
-func createnewWorker(shortID string, userID string, outChannel chan ShortURL) {
+func createnewWorker(shortID string, userID string, outChannel chan URL) {
 	go func() {
 		defer func() {
 			if x := recover(); x != nil {
@@ -161,15 +161,15 @@ func createnewWorker(shortID string, userID string, outChannel chan ShortURL) {
 				log.Printf("error while creating new worker: runtime panic: %v, %v", x, outChannel)
 			}
 		}()
-		outChannel <- ShortURL{ID: shortID, UserID: userID}
+		outChannel <- URL{ShortURL: shortID, UserID: userID}
 		close(outChannel)
 	}()
 }
 
-func fanInFunc(structChannel <-chan struct{}, channels ...chan ShortURL) chan ShortURL {
+func fanInFunc(structChannel <-chan struct{}, channels ...chan URL) chan URL {
 	var wg sync.WaitGroup
-	multiStream := make(chan ShortURL)
-	multiplex := func(c <-chan ShortURL) {
+	multiStream := make(chan URL)
+	multiplex := func(c <-chan URL) {
 		defer wg.Done()
 		for v := range c {
 			select {

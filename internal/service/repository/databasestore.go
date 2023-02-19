@@ -42,9 +42,9 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	return &DataBaseStorage{DataBase: db}, nil
 }
 
-func (d *DataBaseStorage) AddURL(u URL, userID string) error {
+func (d *DataBaseStorage) AddURL(u URL) error {
 	query := `INSERT INTO urls (original_url, short_id, user_id, deleted) VALUES ($1, $2, $3, $4)`
-	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, userID, false)
+	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, u.UserID, false)
 	if err != nil && strings.Contains(err.Error(), pgerrcode.UniqueViolation) {
 		return ErrURLexists
 	}
@@ -108,7 +108,7 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 	return AllIDUrls, nil
 }
 
-func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []ShortURL) ([]ShortCorrelation, error) {
+func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []URL) ([]ShortCorrelation, error) {
 	var newurls []ShortCorrelation
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
@@ -134,14 +134,14 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []Sh
 	return newurls, nil
 }
 
-func (d *DataBaseStorage) DeleteUrls(urls []ShortURL) error {
+func (d *DataBaseStorage) DeleteUrls(urls []URL) error {
 	if len(urls) == 0 {
 		return nil
 	}
 	deleted := true
 	urlsToDelete := make(map[string][]string)
 	for _, url := range urls {
-		urlsToDelete[url.UserID] = append(urlsToDelete[url.UserID], url.ID)
+		urlsToDelete[url.UserID] = append(urlsToDelete[url.UserID], url.ShortURL)
 	}
 	query := `UPDATE urls SET deleted =$1 WHERE user_id = $2 AND short_id = any($3)`
 	for userID, urlIDs := range urlsToDelete {

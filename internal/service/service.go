@@ -19,11 +19,11 @@ type ServiceStruct struct {
 	Repos repository.AddorGetURL
 }
 
-func (ss *ServiceStruct) AddURL(u repository.URL, userID, shortID string) (string, int, error) {
+func (ss *ServiceStruct) AddURL(u repository.URL, shortID string) (string, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	handlerstatus := http.StatusCreated
-	err := ss.Repos.AddURL(u, userID)
+	err := ss.Repos.AddURL(u)
 	if err != nil && !errors.Is(err, repository.ErrURLexists) {
 		return "", 0, fmt.Errorf("unable to make repo (Service AddURL): %w", err)
 	}
