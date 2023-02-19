@@ -23,6 +23,10 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = db.Exec(`DROP TABLE IF EXISTS urls`)
+	if err != nil {
+		return nil, fmt.Errorf("unable to DROP TABLE in DB: %w", err)
+	}
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS urls (
 			original_url VARCHAR UNIQUE, 
@@ -33,8 +37,7 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to CREATE TABLE in DB: %w", err)
 	}
-	_, err = db.Exec(`ALTER TABLE urls ADD COLUMN IF NOT EXISTS deleted BOOLEAN
-	`)
+	_, err = db.Exec(`ALTER TABLE urls ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT false`)
 	if err != nil {
 		return nil, fmt.Errorf("unable to ADD COLUMN deleted in DB: %w", err)
 	}

@@ -127,24 +127,23 @@ type ShortURL struct {
 }
 
 func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
+	structChannel := make(chan struct{})
+	defer close(structChannel)
+	cpuNumber := runtime.NumCPU()
 	inputChannel := make(chan string)
+	structURLs := make([]ShortURL, 0, len(requestURLs))
 	go func() {
 		for _, shortid := range requestURLs {
 			inputChannel <- shortid
 		}
 		close(inputChannel)
 	}()
-
-	cpuNumber := runtime.NumCPU()
 	workerChs := make([]chan ShortURL, 0, cpuNumber)
 	for shortID := range inputChannel {
 		workerChannel := make(chan ShortURL)
 		createnewWorker(shortID, userID, workerChannel)
 		workerChs = append(workerChs, workerChannel)
 	}
-	structURLs := make([]ShortURL, 0, len(requestURLs))
-	structChannel := make(chan struct{})
-	defer close(structChannel)
 	for v := range fanInFunc(structChannel, workerChs...) {
 		structURLs = append(structURLs, v)
 	}
