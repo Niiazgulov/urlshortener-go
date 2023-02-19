@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	// "time"
-
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -57,17 +55,17 @@ func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, shortid string) (s
 	query := `SELECT original_url, deleted FROM urls WHERE short_id = $1`
 	row := d.DataBase.QueryRowContext(ctx, query, shortid)
 	var originalURL string
-	var urlIsDeleted *bool
+	urlIsDeleted := false
 	if err := row.Scan(&originalURL, &urlIsDeleted); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", ErrKeyNotFound
 		}
 		return "", fmt.Errorf("OMG, I unable to Scan originalURL from DB (GetOriginalURL): %w", err)
 	}
-	if urlIsDeleted == nil {
-		return "", fmt.Errorf("deleted value is NIL (GetOriginalURL)")
-	}
-	if *urlIsDeleted {
+	// if urlIsDeleted == nil {
+	// 	return "", fmt.Errorf("deleted value is NIL (GetOriginalURL)")
+	// }
+	if urlIsDeleted {
 		return "", ErrURLdeleted
 	}
 	return originalURL, nil

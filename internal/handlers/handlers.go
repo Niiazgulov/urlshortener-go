@@ -103,9 +103,10 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 
 func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		handlerstatus := http.StatusTemporaryRedirect
 		shortnew := chi.URLParam(r, "id")
 		originalURL, err := repo.GetOriginalURL(r.Context(), shortnew)
-		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) {
+		if err != nil && !errors.Is(err, repository.ErrKeyNotExists) && !errors.Is(err, repository.ErrURLdeleted) {
 			log.Printf("GetHandler: unable to Get Original url from repo: %v", err)
 			http.Error(w, "GetHandler: unable to GET Original url", http.StatusInternalServerError)
 			return
@@ -114,9 +115,12 @@ func GetHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			http.Error(w, "GetHandler: url not found", http.StatusBadRequest)
 			return
 		}
+		if errors.Is(err, repository.ErrURLdeleted) {
+			handlerstatus = http.StatusGone
+		}
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		w.Header().Set("Location", originalURL)
-		w.WriteHeader(http.StatusTemporaryRedirect)
+		w.WriteHeader(handlerstatus)
 	}
 }
 

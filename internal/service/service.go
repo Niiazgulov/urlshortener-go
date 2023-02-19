@@ -24,7 +24,7 @@ func (ss *ServiceStruct) AddURL(u repository.URL, userID, shortID string) (strin
 	defer cancel()
 	handlerstatus := http.StatusCreated
 	err := ss.Repos.AddURL(u, userID)
-	if err != nil && !errors.Is(err, repository.ErrURLexists) && !errors.Is(err, repository.ErrURLdeleted) {
+	if err != nil && !errors.Is(err, repository.ErrURLexists) {
 		return "", 0, fmt.Errorf("unable to make repo (Service AddURL): %w", err)
 	}
 	if errors.Is(err, repository.ErrURLexists) {
@@ -34,9 +34,6 @@ func (ss *ServiceStruct) AddURL(u repository.URL, userID, shortID string) (strin
 			return "", 0, fmt.Errorf("unable to get shortURL from DB (Service AddURL): %w", err)
 		}
 		handlerstatus = http.StatusConflict
-	}
-	if errors.Is(err, repository.ErrURLdeleted) {
-		handlerstatus = http.StatusGone
 	}
 	return shortID, handlerstatus, nil
 }
