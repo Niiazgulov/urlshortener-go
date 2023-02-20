@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
-	"github.com/jackc/pgconn"
+	// "github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -45,15 +46,15 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 func (d *DataBaseStorage) AddURL(u URL) error {
 	query := `INSERT INTO urls (original_url, short_id, user_id, deleted) VALUES ($1, $2, $3, $4)`
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, u.UserID, false)
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Message == pgerrcode.UniqueViolation {
-		return ErrURLexists
-	}
-	return nil
-	// if err != nil && strings.Contains(err.Error(), pgerrcode.UniqueViolation) {
+	// var pgErr *pgconn.PgError
+	// if errors.As(err, &pgErr) && pgErr.Message == pgerrcode.UniqueViolation {
 	// 	return ErrURLexists
 	// }
 	// return nil
+	if err != nil && strings.Contains(err.Error(), pgerrcode.UniqueViolation) {
+		return ErrURLexists
+	}
+	return nil
 }
 
 func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, shortid string) (string, error) {
