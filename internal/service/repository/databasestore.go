@@ -21,10 +21,10 @@ func NewDataBaseStorqage(databasePath string) (AddorGetURL, error) {
 	if err != nil {
 		return nil, err
 	}
-	// _, err = db.Exec(`DROP TABLE IF EXISTS urls`)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("unable to DROP TABLE in DB: %w", err)
-	// }
+	_, err = db.Exec(`DROP TABLE IF EXISTS urls`)
+	if err != nil {
+		return nil, fmt.Errorf("unable to DROP TABLE in DB: %w", err)
+	}
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS urls (
 			original_url VARCHAR UNIQUE, 
