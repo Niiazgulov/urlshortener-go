@@ -11,6 +11,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/Niiazgulov/urlshortener.git/internal/configuration"
 	"github.com/Niiazgulov/urlshortener.git/internal/handlers"
+	"github.com/Niiazgulov/urlshortener.git/internal/service"
 	"github.com/Niiazgulov/urlshortener.git/internal/service/repository"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
@@ -36,6 +37,7 @@ func NewRouter() chi.Router {
 		log.Fatal(err)
 	}
 	configuration.Cfg = *cfg
+	serv := service.ServiceStruct{Repos: repo}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -45,8 +47,8 @@ func NewRouter() chi.Router {
 	r.Use(handlers.DecomprMiddlw)
 	r.Route("/", func(r chi.Router) {
 		r.Get("/{id}", handlers.GetHandler(repo))
-		r.Post("/", handlers.PostHandler(repo, configuration.Cfg))
-		r.Post("/api/shorten", handlers.PostJSONHandler(repo, configuration.Cfg))
+		r.Post("/", handlers.PostHandler(repo, serv, configuration.Cfg))
+		r.Post("/api/shorten", handlers.PostJSONHandler(repo, serv, configuration.Cfg))
 	})
 	return r
 }
