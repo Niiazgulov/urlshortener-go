@@ -30,7 +30,6 @@ type AddorGetURL interface {
 	GetShortURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
 	BatchURL(ctx context.Context, userID string, originalurls []URL) ([]ShortCorrelation, error)
-	// DeleteUrls(ctx context.Context, userID string, urls []string) error
 	DeleteUrls([]URL) error
 	Close()
 }
@@ -48,10 +47,10 @@ type JSONKeymap struct {
 	LongJSON  string `json:"url,omitempty"`
 }
 
-// type URL struct {
-// 	ShortURL    string
-// 	OriginalURL string
-// }
+type ShortCorrelation struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}
 
 const (
 	Symbols        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -114,17 +113,6 @@ func GenerateRandomIntString() string {
 	}
 	return string(result)
 }
-
-type ShortCorrelation struct {
-	CorrelationID string `json:"correlation_id"`
-	ShortURL      string `json:"short_url"`
-}
-
-// type Correlation struct {
-// 	CorrelationID string `json:"correlation_id"`
-// 	OriginalURL   string `json:"original_url"`
-// 	UserID        string `json:"user_id"`
-// }
 
 func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
 	structChannel := make(chan struct{})
