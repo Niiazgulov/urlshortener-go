@@ -19,7 +19,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
+func PostHandler(repo repository.AddorGetURL, serv service.ServiceStruct, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		shortID := repository.GenerateRandomString()
 		shortID = repository.RandomStringUniqueCheck(repo, w, r, shortID)
@@ -43,7 +43,6 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 			http.SetCookie(w, token)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL, UserID: userID}
-		serv := service.ServiceStruct{Repos: repo}
 		newshortID, handlerstatus, err := serv.AddURL(ourPoorURL, shortID)
 		if err != nil {
 			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError)
@@ -56,7 +55,7 @@ func PostHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.Han
 	}
 }
 
-func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http.HandlerFunc {
+func PostJSONHandler(repo repository.AddorGetURL, serv service.ServiceStruct, Cfg configuration.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var tempStrorage repository.JSONKeymap
 		if err := json.NewDecoder(r.Body).Decode(&tempStrorage); err != nil {
@@ -79,7 +78,6 @@ func PostJSONHandler(repo repository.AddorGetURL, Cfg configuration.Config) http
 			http.SetCookie(w, token)
 		}
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL, UserID: userID}
-		serv := service.ServiceStruct{Repos: repo}
 		newshortID, handlerstatus, err := serv.AddURL(ourPoorURL, shortID)
 		if err != nil {
 			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError)
