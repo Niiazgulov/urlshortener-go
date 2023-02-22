@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/lib/pq"
 )
 
 type DataBaseStorage struct {
@@ -41,8 +41,8 @@ func NewDataBaseStorage(databasePath string) (AddorGetURL, error) {
 func (d *DataBaseStorage) AddURL(u URL) error {
 	query := `INSERT INTO urls (original_url, short_id, user_id, deleted) VALUES ($1, $2, $3, $4)`
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, u.UserID, false)
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Message == pgerrcode.UniqueViolation {
+	pgErr := err.(*pq.Error)
+	if pgErr.Code == pgerrcode.UniqueViolation {
 		return ErrURLexists
 	}
 	return nil
