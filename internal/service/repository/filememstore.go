@@ -101,15 +101,10 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []URL)
 	if fs.urlMap == nil {
 		fs.urlMap = make(map[string]URL)
 	}
-	// if err := os.Truncate("OurURL.json", 0); err != nil {
-	// 	return nil, fmt.Errorf("BatchURL: unable to Truncate file: %w", err)
-	// }
-	// стираем файл
 	err := fs.FileJSON.Truncate(0)
 	if err != nil {
 		return nil, fmt.Errorf("batchurl: unable to truncate file: %w", err)
 	}
-	// передвигаем указатель в начало
 	_, err = fs.FileJSON.Seek(0, 0)
 	if err != nil {
 		return nil, fmt.Errorf("batchurl: unable to get the beginning of file: %w", err)
