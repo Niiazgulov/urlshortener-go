@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"runtime"
+
 	"sync"
 	"time"
 
@@ -115,66 +115,19 @@ func GenerateRandomIntString() string {
 }
 
 func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
-	structChannel := make(chan struct{})
-	defer close(structChannel)
-	cpuNumber := runtime.NumCPU()
-	inputChannel := make(chan string)
+	var wg sync.WaitGroup
 	structURLs := make([]URL, 0, len(requestURLs))
-	go func() {
-		for _, shortid := range requestURLs {
-			inputChannel <- shortid
-		}
-		close(inputChannel)
-	}()
-	workerChs := make([]chan URL, 0, cpuNumber)
-	for shortID := range inputChannel {
-		workerChannel := make(chan URL)
-		createnewWorker(shortID, userID, workerChannel)
-		workerChs = append(workerChs, workerChannel)
+	for _, url := range requestURLs {
+		wg.Add(1)
+		go func(url string) {
+			defer wg.Done()
+			v := URL{ShortURL: url, UserID: userID}
+			structURLs = append(structURLs, v)
+		}(url)
 	}
-	for v := range fanInFunc(structChannel, workerChs...) {
-		structURLs = append(structURLs, v)
-	}
+	wg.Wait()
 	err := repo.DeleteUrls(structURLs)
 	if err != nil {
 		fmt.Printf("DeleteUrlsFunc: can't delete urls: %v\n", err)
 	}
-}
-
-func createnewWorker(shortID string, userID string, outChannel chan URL) {
-	go func() {
-		defer func() {
-			if x := recover(); x != nil {
-				createnewWorker(shortID, userID, outChannel)
-				log.Printf("error while creating new worker: runtime panic: %v, %v", x, outChannel)
-			}
-		}()
-		outChannel <- URL{ShortURL: shortID, UserID: userID}
-		close(outChannel)
-	}()
-}
-
-func fanInFunc(structChannel <-chan struct{}, channels ...chan URL) chan URL {
-	var wg sync.WaitGroup
-	multiStream := make(chan URL)
-	multiplex := func(c <-chan URL) {
-		defer wg.Done()
-		for v := range c {
-			select {
-			case <-structChannel:
-				return
-			case multiStream <- v:
-			}
-		}
-	}
-	wg.Add(len(channels))
-	for _, c := range channels {
-		go multiplex(c)
-	}
-	go func() {
-		wg.Wait()
-		close(multiStream)
-	}()
-
-	return multiStream
 }
