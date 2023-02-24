@@ -40,6 +40,7 @@ func (fs *FileStorage) AddURL(u URL) error {
 	if u.ShortURL == "" {
 		return ErrKeyNotSpecified
 	}
+	u.Deleted = false
 	fs.urlMap[u.ShortURL] = u
 	jsonData, err := json.Marshal(fs.urlMap)
 	if err != nil {
