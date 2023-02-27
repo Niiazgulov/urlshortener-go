@@ -145,10 +145,10 @@ func (fs *FileStorage) DeleteUrls(urls []URL) error {
 	if err != nil {
 		return fmt.Errorf("deleteurls: unable to marshal internal file storage map: %w", err)
 	}
-	// if err := os.Truncate("OurURL.json", 0); err != nil {
-	// 	return fmt.Errorf("deleteurls: unable to Truncate file: %w", err)
-	// }
-	fs.FileJSON.Truncate(0)
+	if err := os.Truncate("OurURL.json", 0); err != nil {
+		return fmt.Errorf("deleteurls: unable to Truncate file: %w", err)
+	}
+	// fs.FileJSON.Truncate(0)
 	fs.FileJSON.Write(jsonData)
 	return nil
 }

@@ -45,7 +45,7 @@ func PostHandler(repo repository.AddorGetURL, serv service.ServiceStruct, Cfg co
 		ourPoorURL := repository.URL{ShortURL: shortID, OriginalURL: longURL, UserID: userID}
 		newshortID, handlerstatus, err := serv.AddURL(ourPoorURL, shortID)
 		if err != nil {
-			http.Error(w, "PostHandler: Status internal server error", http.StatusInternalServerError)
+			http.Error(w, "PostHandler: Status internal server error", http.StatusBadGateway)
 			return
 		}
 		shorturl := configuration.Cfg.ConfigURL.JoinPath(newshortID)

@@ -30,7 +30,7 @@ func main() {
 	}
 	defer repo.Close()
 	serv := service.ServiceStruct{Repos: repo}
-	jobCh := make(chan repository.DeleteURLsJob, 100)
+	jobCh := make(chan repository.DeleteURLsJob, 200)
 	for i := 0; i < cfg.WorkerCount; i++ {
 		go func() {
 			for job := range jobCh {

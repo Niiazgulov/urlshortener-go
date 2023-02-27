@@ -22,7 +22,7 @@ func NewConfig() (*Config, error) {
 		ServerAddress:  "",
 		FilePath:       "",
 		DBPath:         "",
-		WorkerCount:    10,
+		WorkerCount:    15,
 	}
 	flag.StringVar(&cfg.ServerAddress, "a", "", "host to listen on")
 	flag.StringVar(&cfg.BaseURLAddress, "b", "", "base url")
