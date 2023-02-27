@@ -241,11 +241,7 @@ func DeleteUrlsHandler(repo repository.AddorGetURL, jobCh chan repository.Delete
 			v := repository.URL{ShortURL: url, UserID: userID}
 			structURLs = append(structURLs, v)
 		}
-		// go repository.DeleteUrlsFunc(repo, requestURLs, userID)
 		jobCh <- repository.DeleteURLsJob{RequestURLs: structURLs}
-		// if token != nil {
-		// 	http.SetCookie(w, token)
-		// }
 		w.WriteHeader(http.StatusAccepted)
 	}
 }

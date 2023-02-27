@@ -8,8 +8,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-
-	// "sync"
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/internal/configuration"
@@ -118,21 +116,3 @@ func GenerateRandomIntString() string {
 	}
 	return string(result)
 }
-
-// func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
-// 	var wg sync.WaitGroup
-// 	structURLs := make([]URL, 0, len(requestURLs))
-// 	for _, url := range requestURLs {
-// 		wg.Add(1)
-// 		go func(url string) {
-// 			defer wg.Done()
-// 			v := URL{ShortURL: url, UserID: userID}
-// 			structURLs = append(structURLs, v)
-// 		}(url)
-// 	}
-// 	wg.Wait()
-// 	err := repo.DeleteUrls(structURLs)
-// 	if err != nil {
-// 		fmt.Printf("DeleteUrlsFunc: can't delete urls: %v\n", err)
-// 	}
-// }
