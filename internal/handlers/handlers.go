@@ -218,14 +218,14 @@ func PostBatchHandler(repo repository.AddorGetURL) http.HandlerFunc {
 	}
 }
 
-func DeleteUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
+func DeleteUrlsHandler(repo repository.AddorGetURL, jobCh chan repository.DeleteURLsJob) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		request, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "DeleteUrlsHandler: can't read r.Body", http.StatusBadRequest)
 			return
 		}
-		userID, token, err := UserIDfromCookie(repo, r)
+		userID, _, err := UserIDfromCookie(repo, r)
 		if err != nil {
 			http.Error(w, "DeleteUrlsHandler: Error when getting of userID", http.StatusInternalServerError)
 			return
@@ -236,10 +236,16 @@ func DeleteUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			http.Error(w, "DeleteUrlsHandler: can't Unmarshal request", http.StatusBadRequest)
 			return
 		}
-		go repository.DeleteUrlsFunc(repo, requestURLs, userID)
-		if token != nil {
-			http.SetCookie(w, token)
+		structURLs := make([]repository.URL, 0, len(requestURLs))
+		for _, url := range requestURLs {
+			v := repository.URL{ShortURL: url, UserID: userID}
+			structURLs = append(structURLs, v)
 		}
+		// go repository.DeleteUrlsFunc(repo, requestURLs, userID)
+		jobCh <- repository.DeleteURLsJob{RequestURLs: structURLs}
+		// if token != nil {
+		// 	http.SetCookie(w, token)
+		// }
 		w.WriteHeader(http.StatusAccepted)
 	}
 }

@@ -30,6 +30,16 @@ func main() {
 	}
 	defer repo.Close()
 	serv := service.ServiceStruct{Repos: repo}
+	jobCh := make(chan repository.DeleteURLsJob, 100)
+	for i := 0; i < cfg.WorkerCount; i++ {
+		go func() {
+			for job := range jobCh {
+				if err := repo.DeleteUrls(job.RequestURLs); err != nil {
+					log.Fatal(err)
+				}
+			}
+		}()
+	}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -44,7 +54,7 @@ func main() {
 		r.Post("/", handlers.PostHandler(repo, serv, configuration.Cfg))
 		r.Post("/api/shorten", handlers.PostJSONHandler(repo, serv, configuration.Cfg))
 		r.Post("/api/shorten/batch", handlers.PostBatchHandler(repo))
-		r.Delete("/api/user/urls", handlers.DeleteUrlsHandler(repo))
+		r.Delete("/api/user/urls", handlers.DeleteUrlsHandler(repo, jobCh))
 	})
 	log.Fatal(http.ListenAndServe(configuration.Cfg.ServerAddress, r))
 }

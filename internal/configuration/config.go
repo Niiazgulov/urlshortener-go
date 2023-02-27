@@ -13,6 +13,7 @@ type Config struct {
 	FilePath       string   `json:"file_storage_path"`
 	ConfigURL      *url.URL `json:"config_url"`
 	DBPath         string   `json:"database_path"`
+	WorkerCount    int
 }
 
 func NewConfig() (*Config, error) {
@@ -21,6 +22,7 @@ func NewConfig() (*Config, error) {
 		ServerAddress:  "",
 		FilePath:       "",
 		DBPath:         "",
+		WorkerCount:    10,
 	}
 	flag.StringVar(&cfg.ServerAddress, "a", "", "host to listen on")
 	flag.StringVar(&cfg.BaseURLAddress, "b", "", "base url")

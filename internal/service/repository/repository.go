@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"sync"
+	// "sync"
 	"time"
 
 	"github.com/Niiazgulov/urlshortener.git/internal/configuration"
@@ -40,6 +40,11 @@ type URL struct {
 	UserID        string `json:"user_id"`
 	CorrelationID string `json:"correlation_id"`
 	Deleted       bool   `json:"deleted"`
+}
+
+type DeleteURLsJob struct {
+	RequestURLs []URL
+	UserID      string
 }
 
 type JSONKeymap struct {
@@ -114,20 +119,20 @@ func GenerateRandomIntString() string {
 	return string(result)
 }
 
-func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
-	var wg sync.WaitGroup
-	structURLs := make([]URL, 0, len(requestURLs))
-	for _, url := range requestURLs {
-		wg.Add(1)
-		go func(url string) {
-			defer wg.Done()
-			v := URL{ShortURL: url, UserID: userID}
-			structURLs = append(structURLs, v)
-		}(url)
-	}
-	wg.Wait()
-	err := repo.DeleteUrls(structURLs)
-	if err != nil {
-		fmt.Printf("DeleteUrlsFunc: can't delete urls: %v\n", err)
-	}
-}
+// func DeleteUrlsFunc(repo AddorGetURL, requestURLs []string, userID string) {
+// 	var wg sync.WaitGroup
+// 	structURLs := make([]URL, 0, len(requestURLs))
+// 	for _, url := range requestURLs {
+// 		wg.Add(1)
+// 		go func(url string) {
+// 			defer wg.Done()
+// 			v := URL{ShortURL: url, UserID: userID}
+// 			structURLs = append(structURLs, v)
+// 		}(url)
+// 	}
+// 	wg.Wait()
+// 	err := repo.DeleteUrls(structURLs)
+// 	if err != nil {
+// 		fmt.Printf("DeleteUrlsFunc: can't delete urls: %v\n", err)
+// 	}
+// }
