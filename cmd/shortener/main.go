@@ -35,7 +35,7 @@ func main() {
 		go func() {
 			for job := range jobCh {
 				if err := repo.DeleteUrls(job.RequestURLs); err != nil {
-					log.Fatal(err)
+					log.Println("Error while DeleteUrls", err)
 				}
 			}
 		}()

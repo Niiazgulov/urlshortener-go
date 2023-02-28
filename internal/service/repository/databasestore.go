@@ -131,13 +131,9 @@ func (d *DataBaseStorage) DeleteUrls(urls []URL) error {
 	if len(urls) == 0 {
 		return nil
 	}
-	urlsToDelete := make(map[string][]string)
-	for _, url := range urls {
-		urlsToDelete[url.UserID] = append(urlsToDelete[url.UserID], url.ShortURL)
-	}
 	query := `UPDATE urls SET deleted =$1 WHERE user_id = $2 AND short_id = any($3)`
-	for userID, urlIDs := range urlsToDelete {
-		if _, err := d.DataBase.Exec(query, true, userID, urlIDs); err != nil {
+	for _, url := range urls {
+		if _, err := d.DataBase.Exec(query, true, url.UserID, url.ShortURL); err != nil {
 			return err
 		}
 	}
