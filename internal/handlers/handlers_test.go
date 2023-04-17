@@ -14,9 +14,9 @@ import (
 	"testing"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/Niiazgulov/urlshortener.git/internal/configuration"
-	"github.com/Niiazgulov/urlshortener.git/internal/service"
-	"github.com/Niiazgulov/urlshortener.git/internal/service/repository"
+	"github.com/Niiazgulov/urlshortener-go.git/internal/configuration"
+	"github.com/Niiazgulov/urlshortener-go.git/internal/service"
+	"github.com/Niiazgulov/urlshortener-go.git/internal/service/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/assert"

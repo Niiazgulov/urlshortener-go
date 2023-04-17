@@ -8,7 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	repository "github.com/Niiazgulov/urlshortener.git/internal/service/repository"
+	repository "github.com/Niiazgulov/urlshortener-go.git/internal/service/repository"
 	gomock "github.com/golang/mock/gomock"
 )
 

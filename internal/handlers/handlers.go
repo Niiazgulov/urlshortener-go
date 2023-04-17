@@ -16,9 +16,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/Niiazgulov/urlshortener.git/internal/configuration"
-	"github.com/Niiazgulov/urlshortener.git/internal/service"
-	"github.com/Niiazgulov/urlshortener.git/internal/service/repository"
+	"github.com/Niiazgulov/urlshortener-go.git/internal/configuration"
+	"github.com/Niiazgulov/urlshortener-go.git/internal/service"
+	"github.com/Niiazgulov/urlshortener-go.git/internal/service/repository"
 )
 
 // PostHandler - обработчик эндпоинта POST "/" - добавление в хранилище оригинального URL.

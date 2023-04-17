@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Niiazgulov/urlshortener.git/internal/configuration"
+	"github.com/Niiazgulov/urlshortener-go.git/internal/configuration"
 )
 
 // Основные ошибки проекта, используемые для работы с хранилищем.

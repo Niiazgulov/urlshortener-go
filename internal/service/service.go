@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Niiazgulov/urlshortener.git/internal/service/repository"
+	"github.com/Niiazgulov/urlshortener-go.git/internal/service/repository"
 )
 
 // Дополнительный интерфейс для работы с методом AddURL.
