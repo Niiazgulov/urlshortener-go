@@ -1,3 +1,4 @@
+// Пакет repository, описание в файле doc.go
 package repository
 
 import (
@@ -12,10 +13,14 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+//go:generate mockgen -source=databasestore.go -destination=mocks/mock_db.go
+
+// Структура для хранилища БД.
 type DataBaseStorage struct {
 	DataBase *sql.DB
 }
 
+// Функция для создания нвоого объекта структуры DataBaseStorage.
 func NewDataBaseStorage(databasePath string) (AddorGetURL, error) {
 	db, err := sql.Open("pgx", databasePath)
 	if err != nil {
@@ -38,6 +43,7 @@ func NewDataBaseStorage(databasePath string) (AddorGetURL, error) {
 	return &DataBaseStorage{DataBase: db}, nil
 }
 
+// Метод для добавления в хранилище информации об URL.
 func (d *DataBaseStorage) AddURL(u URL) error {
 	query := `INSERT INTO urls (original_url, short_id, user_id, deleted) VALUES ($1, $2, $3, $4)`
 	_, err := d.DataBase.Exec(query, u.OriginalURL, u.ShortURL, u.UserID, false)
@@ -47,6 +53,7 @@ func (d *DataBaseStorage) AddURL(u URL) error {
 	return nil
 }
 
+// Метод для извлечения из хранилища информации об originalURL по id.
 func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, shortid string) (string, error) {
 	query := `SELECT original_url, deleted FROM urls WHERE short_id = $1`
 	row := d.DataBase.QueryRowContext(ctx, query, shortid)
@@ -64,6 +71,7 @@ func (d *DataBaseStorage) GetOriginalURL(ctx context.Context, shortid string) (s
 	return originalURL, nil
 }
 
+// Метод для извлечения из хранилища информации о id по originalURL.
 func (d *DataBaseStorage) GetShortURL(ctx context.Context, originalURL string) (string, error) {
 	query := `SELECT short_id FROM urls WHERE original_url = $1`
 	row := d.DataBase.QueryRowContext(ctx, query, originalURL)
@@ -77,6 +85,7 @@ func (d *DataBaseStorage) GetShortURL(ctx context.Context, originalURL string) (
 	return shortURL, nil
 }
 
+// Метод для извлечения из хранилища информации о всех id и originalURL одного пользователя.
 func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error) {
 	query := `SELECT original_url, short_id FROM urls WHERE user_id = $1`
 	rows, err := d.DataBase.QueryContext(ctx, query, userID)
@@ -101,7 +110,9 @@ func (d *DataBaseStorage) FindAllUserUrls(ctx context.Context, userID string) (m
 	return AllIDUrls, nil
 }
 
-func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []URL) ([]ShortCorrelation, error) {
+// Метод для извлечения из хранилища информации о всех id одного пользователя по корреляции.
+// func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []URL) ([]ShortCorrelation, error) {
+func (d *DataBaseStorage) BatchURL(ctx context.Context, urls []URL) ([]ShortCorrelation, error) {
 	var newurls []ShortCorrelation
 	for _, batch := range urls {
 		shortID := GenerateRandomString()
@@ -110,9 +121,14 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []UR
 			ShortURL:      shorturl,
 			CorrelationID: batch.CorrelationID,
 		}
+		if batch.ShortURL != "" {
+			shortID = batch.ShortURL
+		}
 		newurls = append(newurls, newurl)
 		query := `INSERT INTO urls (original_url, short_id, user_id, deleted) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`
-		_, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, userID, false)
+		_, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, batch.UserID, false)
+		// query := `INSERT INTO urls (original_url, id, deleted) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
+		// _, err := d.DataBase.Exec(query, batch.OriginalURL, shortID, false)
 		if err != nil {
 			var pgerr *pgx.PgError
 			if errors.As(err, &pgerr) {
@@ -127,6 +143,7 @@ func (d *DataBaseStorage) BatchURL(ctx context.Context, userID string, urls []UR
 	return newurls, nil
 }
 
+// Метод для удаления из хранилища информации о всех URL одного пользователя.
 func (d *DataBaseStorage) DeleteUrls(urls []URL) error {
 	if len(urls) == 0 {
 		return nil
@@ -144,6 +161,7 @@ func (d *DataBaseStorage) DeleteUrls(urls []URL) error {
 	return nil
 }
 
+// Метод для закрытия БД.
 func (d DataBaseStorage) Close() {
 	d.DataBase.Close()
 }

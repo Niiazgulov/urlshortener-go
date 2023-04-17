@@ -1,3 +1,4 @@
+// Пакет handlers, описание в файле doc.go
 package handlers
 
 import (
@@ -11,6 +12,7 @@ import (
 
 var superkey = []byte("fully protected encryption key")
 
+// Функция генерации подписи пользователя.
 func NewUserSign(id string) (string, error) {
 	intID, err := strconv.Atoi(id)
 	if err != nil {
@@ -26,6 +28,7 @@ func NewUserSign(id string) (string, error) {
 	return newsign, nil
 }
 
+// Функция получения подписи пользователя.
 func GetUserSign(s string) (string, bool, error) {
 	decodedbyte, err := hex.DecodeString(s)
 	if err != nil {

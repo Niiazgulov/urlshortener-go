@@ -1,3 +1,4 @@
+// Пакет Config хранит в себе конфигурацию приложения.
 package configuration
 
 import (
@@ -7,6 +8,7 @@ import (
 	"os"
 )
 
+// Структура Config для работы с флагами и переменными окружения.
 type Config struct {
 	ServerAddress  string   `json:"server_address"`
 	BaseURLAddress string   `json:"base_url"`
@@ -16,6 +18,7 @@ type Config struct {
 	WorkerCount    int
 }
 
+// Функция для создания нового объекта конфигурации.
 func NewConfig() (*Config, error) {
 	cfg := &Config{
 		BaseURLAddress: "",
@@ -41,6 +44,7 @@ func NewConfig() (*Config, error) {
 	return cfg, nil
 }
 
+// Объект конфига
 var Cfg Config
 
 func pickFirstNonEmpty(strings ...string) string {

@@ -1,3 +1,4 @@
+// Пакет repository, описание в файле doc.go
 package repository
 
 import (
@@ -10,6 +11,7 @@ import (
 	"sync"
 )
 
+// Структура для файлового хранилища.
 type FileStorage struct {
 	FileJSON *os.File
 	// Ключ мапы ShortID
@@ -17,6 +19,7 @@ type FileStorage struct {
 	mutex  sync.RWMutex
 }
 
+// Функция для создания нвоого объекта структуры NewFileStorage.
 func NewFileStorage(f *os.File) (AddorGetURL, error) {
 	m := make(map[string]URL)
 	err := json.NewDecoder(f).Decode(&m)
@@ -33,6 +36,7 @@ func NewFileStorage(f *os.File) (AddorGetURL, error) {
 	}, nil
 }
 
+// Метод для добавления в хранилище информации об URL.
 func (fs *FileStorage) AddURL(u URL) error {
 	if fs.urlMap == nil {
 		fs.urlMap = make(map[string]URL)
@@ -53,6 +57,7 @@ func (fs *FileStorage) AddURL(u URL) error {
 	return nil
 }
 
+// Метод для извлечения из хранилища информации об URL по short_id.
 func (fs *FileStorage) GetOriginalURL(_ context.Context, shortID string) (string, error) {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
@@ -70,6 +75,7 @@ func (fs *FileStorage) GetOriginalURL(_ context.Context, shortID string) (string
 	return "", ErrKeyNotFound
 }
 
+// Метод для извлечения из хранилища информации о short_id по originalURL.
 func (fs *FileStorage) GetShortURL(_ context.Context, originalurl string) (string, error) {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
@@ -84,6 +90,7 @@ func (fs *FileStorage) GetShortURL(_ context.Context, originalurl string) (strin
 	return "", ErrKeyNotFound
 }
 
+// Метод для извлечения из хранилища информации о всех short_id и originalURL одного пользователя.
 func (fs *FileStorage) FindAllUserUrls(_ context.Context, userID string) (map[string]string, error) {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
@@ -96,7 +103,9 @@ func (fs *FileStorage) FindAllUserUrls(_ context.Context, userID string) (map[st
 	return m, nil
 }
 
-func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []URL) ([]ShortCorrelation, error) {
+// Метод для извлечения из хранилища информации о всех short_id одного пользователя по корреляции.
+// func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []URL) ([]ShortCorrelation, error) {
+func (fs *FileStorage) BatchURL(_ctx context.Context, urls []URL) ([]ShortCorrelation, error) {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
 	if fs.urlMap == nil {
@@ -131,6 +140,7 @@ func (fs *FileStorage) BatchURL(_ctx context.Context, userID string, urls []URL)
 	return newurls, nil
 }
 
+// Метод для удаления из хранилища информации о всех URL одного пользователя.
 func (fs *FileStorage) DeleteUrls(urls []URL) error {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
@@ -152,6 +162,7 @@ func (fs *FileStorage) DeleteUrls(urls []URL) error {
 	return nil
 }
 
+// Метод для закрытия файла.
 func (fs *FileStorage) Close() {
 	fs.FileJSON.Close()
 }
