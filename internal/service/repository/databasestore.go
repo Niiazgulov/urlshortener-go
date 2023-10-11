@@ -13,8 +13,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-//go:generate mockgen -source=databasestore.go -destination=mocks/mock_db.go
-
 // Структура для хранилища БД.
 type DataBaseStorage struct {
 	DataBase *sql.DB
@@ -159,6 +157,18 @@ func (d *DataBaseStorage) DeleteUrls(urls []URL) error {
 		}
 	}
 	return nil
+}
+
+// Возвращает количество сокращённых URL и пользователей в сервисе
+func (d DataBaseStorage) GetStats(ctx context.Context) (urls, users int, err error) {
+	var urlsCount, usersCount int
+	query := `SELECT COUNT('*'), COUNT(DISTINCT user_id) FROM urls`
+	row := d.DataBase.QueryRowContext(ctx, query)
+	if err := row.Scan(&urlsCount, &usersCount); err != nil {
+		return 0, 0, fmt.Errorf("OMG, I unable to Scan from DB (GetStats): %w", err)
+	}
+
+	return usersCount, urlsCount, err
 }
 
 // Метод для закрытия БД.

@@ -2,6 +2,8 @@
 package repository
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -160,6 +162,32 @@ func (fs *FileStorage) DeleteUrls(urls []URL) error {
 	}
 	fs.FileJSON.Write(jsonData)
 	return nil
+}
+
+// Возвращает количество сокращённых URL и пользователей в сервисе
+func (fs *FileStorage) GetStats(ctx context.Context) (urls, users int, err error) {
+	// fs.mutex.RLock()
+	// defer fs.mutex.RUnlock()
+
+	if _, err := fs.FileJSON.Seek(0, io.SeekStart); err != nil {
+		return 0, 0, err
+	}
+
+	usersCount := make(map[string]bool)
+	urlsCount := 0
+	var record URL
+	scanner := bufio.NewScanner(fs.FileJSON)
+
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if err := json.NewDecoder(bytes.NewReader(line)).Decode(&record); err != nil {
+			return 0, 0, err
+		}
+		urlsCount++
+		usersCount[record.UserID] = true
+	}
+
+	return len(usersCount), urlsCount, nil
 }
 
 // Метод для закрытия файла.

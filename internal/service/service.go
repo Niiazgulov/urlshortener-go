@@ -15,6 +15,8 @@ import (
 // Дополнительный интерфейс для работы с методом AddURL.
 type ServiceInterf interface {
 	AddURL(u repository.URL, userID, shortID string) (string, int, error) // метод AddURL
+	GetUserID(sign string) (int, error)
+	GetCreateUserID(ctx context.Context, sign string) (int, string, error)
 }
 
 // Структура, в которую передается объект основного интерфейса хранилища.
@@ -40,4 +42,43 @@ func (ss *ServiceStruct) AddURL(u repository.URL, shortID string) (string, int, 
 		handlerstatus = http.StatusConflict // И устанавливается статус 409.
 	}
 	return shortID, handlerstatus, nil
+}
+
+func (ss *ServiceStruct) newUserID(ctx context.Context) (string, string, error) {
+	userID := repository.GenerateRandomIntString()
+	signValue, err := NewUserSign(userID)
+	if err != nil {
+		log.Println("Error of creating user sign (UserIDfromCookie)", err)
+		return "", "", err
+	}
+	return userID, signValue, err
+}
+
+// Функция возвращает userID из подписи
+func (ss *ServiceStruct) GetUserID(sign string) (string, error) {
+	userID, checkAuth, err := GetUserSign(sign)
+	if err != nil {
+		log.Println("Error while checking of sign", err)
+		return "", err
+	}
+	if !checkAuth {
+		return "", repository.ErrIDNotValid
+	}
+	return userID, nil
+}
+
+// Функция получает или создает userID из подписи
+func (ss *ServiceStruct) GetCreateUserID(ctx context.Context, sign string) (string, string, error) {
+	if sign == "" {
+		ss.newUserID(ctx)
+	}
+	userID, checkAuth, err := GetUserSign(sign)
+	if err != nil {
+		log.Println("Error while checking of sign", err)
+		return "", "", err
+	}
+	if !checkAuth {
+		return ss.newUserID(ctx)
+	}
+	return userID, sign, nil
 }

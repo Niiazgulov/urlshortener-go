@@ -24,8 +24,6 @@ var (
 	ErrURLdeleted      = errors.New("URl previosly deleted")
 )
 
-//go:generate mockgen -source=repository.go -destination=mocks/mock_repo.go
-
 // Основной интерфейс проекта, в котором описаны методы работы с хранилищем.
 type AddorGetURL interface {
 	AddURL(u URL) error
@@ -33,8 +31,8 @@ type AddorGetURL interface {
 	GetShortURL(ctx context.Context, s string) (string, error)
 	FindAllUserUrls(ctx context.Context, userID string) (map[string]string, error)
 	BatchURL(ctx context.Context, originalurls []URL) ([]ShortCorrelation, error)
-	// BatchURL(ctx context.Context, userID string, originalurls []URL) ([]ShortCorrelation, error)
 	DeleteUrls([]URL) error
+	GetStats(ctx context.Context) (urls, users int, err error)
 	Close()
 }
 
