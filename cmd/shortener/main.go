@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
-	"net/http"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/caarlos0/env/v6"
@@ -16,7 +19,16 @@ import (
 	"github.com/Niiazgulov/urlshortener-go.git/internal/service/repository"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
+	fmt.Printf("Build version: %s\n", buildVersion)
+	fmt.Printf("Build date: %s\n", buildDate)
+	fmt.Printf("Build commit: %s\n", buildCommit)
 	if err := env.Parse(&configuration.Cfg); err != nil {
 		log.Fatal(err)
 	}
@@ -56,6 +68,19 @@ func main() {
 		r.Post("/api/shorten", handlers.PostJSONHandler(repo, serv, configuration.Cfg))
 		r.Post("/api/shorten/batch", handlers.PostBatchHandler(repo))
 		r.Delete("/api/user/urls", handlers.DeleteUrlsHandler(repo, jobCh))
+		r.Get("/api/internal/stats", handlers.GetStatsHandler(repo, configuration.Cfg))
 	})
-	log.Fatal(http.ListenAndServe(configuration.Cfg.ServerAddress, r))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	grp, ctx := errgroup.WithContext(ctx)
+	grp.Go(func() error {
+		return HTTPServer(ctx, repo, cfg, r)
+	})
+	grp.Go(func() error {
+		return GRPCServer(ctx, repo, cfg, serv)
+	})
+	err = grp.Wait()
+	if err != nil {
+		log.Println(err)
+	}
 }

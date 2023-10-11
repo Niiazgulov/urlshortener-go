@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package handlers;
+// import "google/protobuf/empty.proto";
+
+option go_package = "handlers/proto";
+
+enum ShortStatus {
+  UNKNOWN = 0;
+  CREATED = 1;
+}
+
+message ShortReq {
+  string url = 1;
+}
+
+message ShortResp {
+  string result = 1;
+  ShortStatus status = 2;
+}
+
+message ShortOriginalUrl {
+  string short_url = 1;
+  string original_url = 2;
+}
+
+message UserUrlsReq {
+}
+
+message UserUrlsResp {
+  repeated ShortOriginalUrl urls = 1;
+}
+
+message CorrOriginal {
+  string correlation_id = 1;
+  string original_url = 2;
+}
+
+message CorrShort {
+  string correlation_id = 1;
+  string short_url = 2;
+}
+
+message BatchReq {
+  repeated CorrOriginal urls = 1;
+}
+
+message BatchResp {
+  repeated CorrShort urls = 1;
+}
+
+message DelBatchReq {
+  repeated string url_ids = 1;
+}
+
+message DelBatchResp {
+}
+
+service URLShortener {
+  rpc Short(ShortReq) returns (ShortResp);
+  rpc UserUrls(UserUrlsReq) returns (UserUrlsResp);
+  rpc Batch(BatchReq) returns (BatchResp);
+  rpc DelBatch(DelBatchReq) returns (DelBatchResp);
+}
+
+ 

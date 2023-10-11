@@ -13,6 +13,9 @@ import (
 	"strings"
 	"time"
 
+	// "net"
+	"net/netip"
+
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -144,7 +147,7 @@ func GetUserAllUrlsHandler(repo repository.AddorGetURL) http.HandlerFunc {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-		userID, _, err := GetUserSign(encodedCookie.Value) // Получение userID из куки.
+		userID, _, err := service.GetUserSign(encodedCookie.Value) // Получение userID из куки.
 		if err != nil {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -297,7 +300,7 @@ func UserIDfromCookie(repo repository.AddorGetURL, r *http.Request) (string, *ht
 	sign, err := r.Cookie(userIDCookie)
 	if err != nil {
 		userID := repository.GenerateRandomIntString()
-		signValue, err := NewUserSign(userID)
+		signValue, err := service.NewUserSign(userID)
 		if err != nil {
 			log.Println("Error of creating user sign (UserIDfromCookie)", err)
 			return "", nil, err
@@ -306,7 +309,7 @@ func UserIDfromCookie(repo repository.AddorGetURL, r *http.Request) (string, *ht
 		return userID, cookie, nil
 	}
 	signValue := sign.Value
-	userID, checkAuth, err := GetUserSign(signValue)
+	userID, checkAuth, err := service.GetUserSign(signValue)
 	if err != nil {
 		log.Println("Error when getting of user sign (UserIDfromCookie)", err)
 		return "", nil, err
@@ -316,4 +319,49 @@ func UserIDfromCookie(repo repository.AddorGetURL, r *http.Request) (string, *ht
 		return "", nil, err
 	}
 	return userID, cookie, nil
+}
+
+// Количество сокращённых URL и пользователей в сервисе
+type Stats struct {
+	URLsCount  int `json:"urls"`
+	UsersCount int `json:"users"`
+}
+
+// GetStatsHandler - обработчик эндпоинта GET "/api/internal/stats"
+func GetStatsHandler(repo repository.AddorGetURL, cfg configuration.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if cfg.TrustedSubnet == "" {
+			http.Error(w, "Access denied", http.StatusForbidden)
+			return
+		}
+		ipStr := r.Header.Get("X-Real-IP")
+		ip, _ := netip.ParseAddr(ipStr)
+		var trustedIPNet netip.Prefix
+
+		if trustedIPNet.Contains(ip) {
+			http.Error(w, "Access denied", http.StatusForbidden)
+			return
+		}
+
+		urls, users, err := repo.GetStats(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		stats := Stats{
+			URLsCount:  urls,
+			UsersCount: users,
+		}
+
+		resp, err := json.Marshal(stats)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if _, err = w.Write(resp); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
 }
